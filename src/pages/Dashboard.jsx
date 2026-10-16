@@ -253,7 +253,7 @@ function Dashboard() {
                             <Calculator size={32} strokeWidth={1.5} />
                         </div>
                         <div className="dashboard-title">GPA Calculator</div>
-                        <div className="dashboard-description">Calculate your semester GPA with ease and precision.</div>
+                        <div className="dashboard-description">Calculate your semester GPA and track your academic progress with ease.</div>
                     </Link>
                 </motion.div>
 
