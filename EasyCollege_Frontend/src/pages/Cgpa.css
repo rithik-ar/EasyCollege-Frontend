@@ -1,0 +1,419 @@
+.cgpa-page-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 20px;
+    min-height: calc(100vh - 80px);
+}
+
+.cgpa-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(24px);
+    border-radius: 20px;
+    padding: 40px;
+    width: 100%;
+    max-width: 800px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.cgpa-summary {
+    text-align: center;
+    color: #ffffff;
+}
+
+.cgpa-summary h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+}
+
+.table-section {
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #333;
+    background: #252525;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.table-section .section-title {
+    margin-bottom: 15px;
+}
+
+.cgpa-table {
+    width: calc(100% + 40px);
+    margin: 0 -20px -20px -20px;
+    border-collapse: collapse;
+    background: #1a1a1a;
+}
+
+.cgpa-table th {
+    background: #111;
+    color: #888;
+    padding: 14px 15px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    text-align: center;
+    border-bottom: 1px solid #333;
+    border-top: 1px solid #333;
+    letter-spacing: 0.5px;
+}
+
+.cgpa-table td {
+    padding: 16px 15px;
+    color: #ddd;
+    text-align: center;
+    border-bottom: 1px solid #2a2a2a;
+    font-size: 0.95rem;
+    transition: background 0.2s ease;
+}
+
+.cgpa-table tr:hover td {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.cgpa-table tr:last-child td {
+    border-bottom: none;
+}
+
+.chart-section {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid var(--glass-border);
+}
+
+.chart-title {
+    text-align: center;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.chart-container {
+    position: relative;
+    height: 350px;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .cgpa-page-wrapper {
+        padding: 10px 8px;
+    }
+
+    .cgpa-card {
+        padding: 20px 10px;
+        border-radius: 16px;
+        gap: 15px;
+    }
+
+    .cgpa-summary {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 15px;
+        text-align: left;
+    }
+
+    .cgpa-summary h2 {
+        font-size: 0.9rem;
+        margin-bottom: 6px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .cgpa-summary h2:last-child {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 1.1rem;
+        color: var(--primary);
+    }
+
+    /* Force Fit Table - No Scroll */
+    .table-section {
+        overflow-x: hidden;
+        border-radius: 10px;
+        padding: 15px;
+    }
+
+    .cgpa-table {
+        width: calc(100% + 30px);
+        margin: 0 -15px -15px -15px;
+        table-layout: fixed;
+    }
+
+    .cgpa-table th {
+        padding: 12px 4px;
+        font-size: 0.65rem;
+    }
+
+    .cgpa-table td {
+        padding: 14px 4px;
+        font-size: 0.85rem;
+        text-align: center;
+        border-bottom: 1px solid #2a2a2a;
+        display: table-cell;
+    }
+
+    /* Column widths for CGPA */
+    .cgpa-table th:nth-child(1),
+    .cgpa-table td:nth-child(1) {
+        width: 25%;
+    }
+
+    .cgpa-table th:nth-child(2),
+    .cgpa-table td:nth-child(2) {
+        width: 37.5%;
+    }
+
+    .cgpa-table th:nth-child(3),
+    .cgpa-table td:nth-child(3) {
+        width: 37.5%;
+    }
+
+    .chart-section {
+        padding: 10px;
+        border-radius: 10px;
+    }
+
+    .chart-container {
+        height: 250px;
+    }
+
+    .subjects-section {
+        padding: 10px 5px;
+        border-radius: 10px;
+    }
+
+    .subjects-scroll-area {
+        overflow-x: hidden;
+    }
+
+    .subjects-table {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    .subjects-table th {
+        padding: 8px 2px;
+        font-size: 0.55rem;
+        text-align: center;
+        letter-spacing: -0.5px;
+    }
+
+    .subjects-table td {
+        padding: 8px 2px;
+        font-size: 0.65rem;
+        text-align: center;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .subjects-table th:nth-child(4), 
+    .subjects-table td:nth-child(4) {
+        text-align: left;
+    }
+
+    .course-code {
+        font-size: 0.6rem;
+    }
+
+    .course-title {
+        font-size: 0.6rem;
+        line-height: 1.2;
+    }
+
+    .subjects-table th:nth-child(1), .subjects-table td:nth-child(1) { width: 10%; }
+    .subjects-table th:nth-child(2), .subjects-table td:nth-child(2) { width: 10%; }
+    .subjects-table th:nth-child(3), .subjects-table td:nth-child(3) { width: 20%; }
+    .subjects-table th:nth-child(4), .subjects-table td:nth-child(4) { width: 40%; }
+    .subjects-table th:nth-child(5), .subjects-table td:nth-child(5) { width: 10%; }
+    .subjects-table th:nth-child(6), .subjects-table td:nth-child(6) { width: 10%; }
+
+    .modern-checkbox {
+        margin: 0 auto;
+    }
+}
+
+/* Subjects Breakdown Grid */
+.cgpa-content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.8fr;
+    gap: 25px;
+    align-items: start;
+}
+
+@media (max-width: 1024px) {
+    .cgpa-content-grid {
+        grid-template-columns: 1fr;
+    }
+    .subjects-section {
+        order: -1;
+    }
+}
+
+.section-title {
+    color: #888;
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.subjects-section {
+    background: #252525;
+    border-radius: 12px;
+    border: 1px solid #333;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.subjects-scroll-area {
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #1a1a1a;
+    background: #1a1a1a;
+}
+
+.subjects-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.subjects-table th {
+    background: #111;
+    color: #666;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 12px 10px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    text-align: left;
+    border-bottom: 1px solid #222;
+}
+
+.subjects-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #222;
+    color: #ccc;
+    font-size: 0.8rem;
+}
+
+.course-code {
+    font-family: 'JetBrains Mono', monospace;
+    color: #888;
+    font-size: 0.75rem;
+}
+
+.course-title {
+    color: #eee;
+    font-weight: 500;
+}
+
+.grade-ra {
+    color: #ff5c5c !important;
+    font-weight: 700;
+}
+
+.text-error {
+    color: #ff5c5c !important;
+}
+
+.excluded-row {
+    opacity: 0.25;
+    filter: grayscale(1);
+}
+
+/* Modern Checkbox inside subjects table */
+.modern-checkbox {
+    display: block;
+    position: relative;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.modern-checkbox input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 18px;
+    width: 18px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modern-checkbox:hover input ~ .checkmark {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--primary);
+}
+
+.modern-checkbox input:checked ~ .checkmark {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 10px var(--primary-glow);
+}
+
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.modern-checkbox input:checked ~ .checkmark:after {
+    display: block;
+}
+
+.modern-checkbox .checkmark:after {
+    left: 6px;
+    top: 2px;
+    width: 4px;
+    height: 8px;
+    border: solid #121212;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* Scrollbar styling */
+.subjects-scroll-area::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.subjects-scroll-area::-webkit-scrollbar-track {
+    background: #111;
+}
+
+.subjects-scroll-area::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 10px;
+}
+
+.subjects-scroll-area::-webkit-scrollbar-thumb:hover {
+    background: #444;
+}

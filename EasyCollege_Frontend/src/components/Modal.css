@@ -1,0 +1,117 @@
+.modal-overlay {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  z-index: 2000;
+  pointer-events: none;
+}
+
+.modal-content {
+  background: rgba(23, 23, 23, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 24px;
+  max-width: 400px;
+  width: auto;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
+  animation: modalSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.modal-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.close-button {
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  color: #94a3b8;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -4px;
+  margin-right: -4px;
+}
+
+.close-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.modal-body {
+  color: #94a3b8;
+  line-height: 1.6;
+  font-size: 1.05rem;
+}
+
+.modal-footer {
+  margin-top: 32px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.primary-button {
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+.primary-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+  filter: brightness(1.1);
+}
+
+.primary-button:active {
+  transform: translateY(0);
+}
+
+@keyframes modalSlideIn {
+  from { 
+    transform: translateX(100%) scale(0.9);
+    opacity: 0; 
+  }
+  to { 
+    transform: translateX(0) scale(1);
+    opacity: 1; 
+  }
+}
