@@ -9,13 +9,16 @@ import {
 // Hand-derived expectations shared with the backend tests (see each case's "why").
 const shared = JSON.parse(readFileSync(new URL('../../test_data/attendance_cases.json', import.meta.url), 'utf8'));
 
-const row = ({ total, present, absent, exemption }, extra = {}) => ({
+// exemption = total exemption hours used by the rules; exemptionColumn = eCampus's Exemption Hours
+// column, which can be lower when medical leave is only counted in "% with Exemp Med".
+const row = ({ total, present, absent, exemption, exemptionColumn = exemption }, extra = {}) => ({
     course_code: 'X',
     course_name: 'Course X',
     total_hours: total,
     present_hours: present,
     absent_hours: absent,
-    exemption_hours: exemption,
+    exemption_hours: exemptionColumn,
+    total_exemption_hours: exemption,
     physical_attendance: '0%',
     with_exemption: '0%',
     updated_till: '',
@@ -110,13 +113,28 @@ test('simulated exemptions never raise physical attendance or change the real ex
         assert.ok(Number(r.with_exemption) >= previousMed);
         previousMed = Number(r.with_exemption);
         assert.equal(r.exemption_hours, 2);
+        assert.equal(r.total_exemption_hours, 2);
     }
+});
+
+test('medical leave outside the Exemption Hours column counts (reported 65% / 75% course)', () => {
+    // Shared row 23X901: 40 total, 26 present, column 3, total 4 (1 medical hour).
+    const reported = shared.rows.find(r => r.row[0] === '23X901');
+    const base = deepFreeze(row({ total: 40, present: 26, absent: 14, exemption: reported.total_exemption_hours, exemptionColumn: 3 },
+        { physical_attendance: '65%', with_exemption: '75%' }));
+    // Attend 1: 27/41 = 65.9% shows 66; (27 + 4)/41 = 75.6% shows 76: route B still holds.
+    // Bunks 0 (27/41 < 74%). Med Bunks: one bunk -> 31/42 = 73.8% shows 74 -> 0.
+    // Using only the column (3) would give 30/41 = 73.2% and "Classes to attend".
+    assert.deepEqual(pick(simulateCourse(base, { attend: 1 })), {
+        total: 41, present: 27, absent: 14, physical: '66', with_exemption: '76',
+        status: 'Remaining bunks', count: 0, exemption_bunks: 0
+    });
 });
 
 test('missing or malformed exemption hours disable prediction instead of estimating', () => {
     const oldCache = { ...row({ total: 40, present: 32, absent: 8, exemption: 0 }), physical_attendance: '80%', with_exemption: '90%' };
-    delete oldCache.exemption_hours;
-    const cases = [oldCache, { ...oldCache, exemption_hours: null }, { ...oldCache, exemption_hours: '2' }, { ...oldCache, exemption_hours: -1 }];
+    delete oldCache.total_exemption_hours; // cached before the backend returned it
+    const cases = [oldCache, { ...oldCache, total_exemption_hours: null }, { ...oldCache, total_exemption_hours: '2' }, { ...oldCache, total_exemption_hours: -1 }];
     for (const c of cases) {
         assert.equal(canSimulate(c), false);
         const r = simulateCourse(c, { attend: 1, exemption: 2 });

@@ -78,7 +78,7 @@ function Attendance() {
     const renderSimulateControls = (course) => !canSimulate(course) ? (
         <span
             style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}
-            title="This attendance has no exemption hours from eCampus (it was saved before they were included). Use the reload button to fetch it again."
+            title="This attendance was saved before the predictor's exemption data was included. Use the reload button to fetch it again."
         >
             Reload to predict
         </span>
