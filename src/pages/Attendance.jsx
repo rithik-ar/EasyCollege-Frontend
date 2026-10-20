@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Info, Plus, Minus, Wand2, Save, CloudOff, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { simulateCourse, updateSimulation, canSimulate, formatBunks } from '../utils/attendanceSimulation';
 import './Attendance.css';
 
 function Attendance() {
@@ -50,132 +51,42 @@ function Attendance() {
     };
 
     const handleSimulate = (courseCode, type, value) => {
-        setSimulation(prev => {
-            const currentObj = prev[courseCode] || { bunk: 0, attend: 0 };
-            return {
-                ...prev,
-                [courseCode]: {
-                    ...currentObj,
-                    [type]: Math.max(0, currentObj[type] + value)
-                }
-            };
-        });
+        setSimulation(prev => updateSimulation(prev, courseCode, type, value));
     };
 
-    const getSimulatedCourse = (course) => {
-        const sim = simulation[course.course_code] || { bunk: 0, attend: 0 };
-        if (sim.bunk === 0 && sim.attend === 0) {
-            return { ...course, isSimulated: false, simBunk: 0, simAttend: 0 };
-        }
+    const simulatedData = attendanceData.map(course => simulateCourse(course, simulation[course.course_code]));
 
-        const simulatedTotal = parseInt(course.total_hours) + sim.bunk + sim.attend;
-        const simulatedPresent = parseInt(course.present_hours) + sim.attend;
-        const simulatedAbsent = parseInt(course.absent_hours) + sim.bunk;
-        const newPercentage = simulatedTotal > 0 ? Math.round((simulatedPresent / simulatedTotal) * 100) : parseInt(course.physical_attendance);
-
-        const originalPhys = parseInt(course.physical_attendance);
-        const originalMed = parseInt(course.with_exemption);
-        const assumedExemptionHours = Math.max(0, Math.floor(((originalMed / 100) * parseInt(course.total_hours))) - Math.floor(((originalPhys / 100) * parseInt(course.total_hours))));
-
-        let newMedPercentage = simulatedTotal > 0
-            ? Math.round(((simulatedPresent + assumedExemptionHours) / simulatedTotal) * 100)
-            : originalMed;
-
-        newMedPercentage = Math.min(100, newMedPercentage);
-
-        // Recalculate status with accurate logic including exemptions
-        let newStatus = course.status;
-        let newCount = course.count;
-        if (newPercentage === newMedPercentage) {
-            if (newPercentage >= 75) {
-                newStatus = "Remaining bunks";
-                newCount = Math.floor((simulatedPresent - (0.75 * simulatedTotal)) / 0.75);
-                if (newCount < 0) newCount = 0;
-            } else {
-                newStatus = "Classes to attend";
-                newCount = Math.ceil(((0.75 * simulatedTotal) - simulatedPresent) / 0.25);
-            }
-        } else {
-            if (newMedPercentage >= 75 && newPercentage >= 65) {
-                newStatus = "Remaining bunks";
-                newCount = Math.max(0, Math.floor((simulatedPresent - (0.75 * simulatedTotal)) / 0.75));
-            } else {
-                newStatus = "Classes to attend";
-                if (newMedPercentage < 75 && newPercentage > 65) {
-                    newCount = Math.ceil(((0.75 * simulatedTotal) - (simulatedPresent + assumedExemptionHours)) / 0.25);
-                } else {
-                    newCount = Math.ceil(((0.65 * simulatedTotal) - simulatedPresent) / 0.35);
-                }
-            }
-        }
-
-        let newExemptionBunks = course.exemption_bunks;
-        if (course.exemption_bunks !== undefined) {
-            newExemptionBunks = 0;
-            if (newMedPercentage >= 75 && newPercentage >= 65) {
-                let p1 = newPercentage;
-                let p2 = newMedPercentage;
-                let dEx = 0;
-
-                while (p1 > 65 && p2 > 75 && dEx < 50) {
-                    dEx += 1;
-                    p1 = Math.ceil((simulatedPresent / (simulatedTotal + dEx)) * 100);
-                    p2 = Math.ceil(((simulatedPresent + assumedExemptionHours) / (simulatedTotal + dEx)) * 100);
-                    if (p1 > 65 && p2 > 75) {
-                        newExemptionBunks += 1;
-                    }
-                }
-            }
-        }
-
-        return {
-            ...course,
-            total_hours: simulatedTotal,
-            present_hours: simulatedPresent,
-            absent_hours: simulatedAbsent,
-            physical_attendance: `${newPercentage}`,
-            with_exemption: `${newMedPercentage}`,
-            status: newStatus,
-            count: newCount,
-            exemption_bunks: newExemptionBunks,
-            isSimulated: true,
-            simBunk: sim.bunk,
-            simAttend: sim.attend
-        };
-    };
-
-    const simulatedData = attendanceData.map(getSimulatedCourse);
-
-    const renderSimulateControls = (course) => (
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-                <span style={{ fontSize: '10px', color: '#888' }}>Attend</span>
-                <div style={{ display: 'flex', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <button
-                        onClick={() => handleSimulate(course.course_code, 'attend', -1)}
-                        style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: '2px 4px' }}
-                    ><Minus size={12} /></button>
-                    <span style={{ fontSize: '12px', padding: '0 4px', lineHeight: '18px' }}>{course.simAttend}</span>
-                    <button
-                        onClick={() => handleSimulate(course.course_code, 'attend', 1)}
-                        style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: '2px 4px' }}
-                    ><Plus size={12} /></button>
-                </div>
+    const renderStepper = (course, type, label, value) => (
+        <div role="group" aria-label={`${label} classes for ${course.course_code}`} className="predictor-stepper">
+            <span className="predictor-stepper-label">{label}</span>
+            <div className="predictor-stepper-buttons">
+                <button
+                    type="button"
+                    aria-label={`Decrease ${label.toLowerCase()} for ${course.course_code}`}
+                    onClick={() => handleSimulate(course.course_code, type, -1)}
+                ><Minus size={12} /></button>
+                <span aria-live="polite" className="predictor-stepper-value">{value}</span>
+                <button
+                    type="button"
+                    aria-label={`Increase ${label.toLowerCase()} for ${course.course_code}`}
+                    onClick={() => handleSimulate(course.course_code, type, 1)}
+                ><Plus size={12} /></button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-                <span style={{ fontSize: '10px', color: '#888' }}>Bunk</span>
-                <div style={{ display: 'flex', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <button
-                        onClick={() => handleSimulate(course.course_code, 'bunk', -1)}
-                        style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: '2px 4px' }}
-                    ><Minus size={12} /></button>
-                    <span style={{ fontSize: '12px', padding: '0 4px', lineHeight: '18px' }}>{course.simBunk}</span>
-                    <button
-                        onClick={() => handleSimulate(course.course_code, 'bunk', 1)}
-                        style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: '2px 4px' }}
-                    ><Plus size={12} /></button>
-                </div>
-            </div>
+        </div>
+    );
+
+    const renderSimulateControls = (course) => !canSimulate(course) ? (
+        <span
+            style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}
+            title="This attendance has no exemption hours from eCampus (it was saved before they were included). Use the reload button to fetch it again."
+        >
+            Reload to predict
+        </span>
+    ) : (
+        <div className="predictor-controls">
+            {renderStepper(course, 'attend', 'Attend', course.simAttend)}
+            {renderStepper(course, 'bunk', 'Bunk', course.simBunk)}
+            {renderStepper(course, 'exemption', 'Exemption', course.simExemption)}
         </div>
     );
 
@@ -313,7 +224,7 @@ function Attendance() {
                                             {course.with_exemption}
                                         </td>
                                         <td style={{ fontWeight: 700, color: course.status !== "Remaining bunks" ? '#f87171' : '#ccc' }}>
-                                            {course.status !== "Remaining bunks" ? `-${course.count}` : course.count}
+                                            {formatBunks(course)}
                                         </td>
                                         <td style={{ fontWeight: 700, color: course.exemption_bunks < 0 ? '#f87171' : '#ccc' }}>
                                             {course.exemption_bunks !== undefined ? course.exemption_bunks : '-'}
@@ -385,9 +296,10 @@ function Attendance() {
                     <div className="popup-content">
                         <div className="popup-icon">ℹ️</div>
                         <div className="popup-text">
-                            <strong>Predictor:</strong> Use +/- to see how future classes impact your percentage.<br />
-                            Normal bunks ensure physical attendance &gt; 75%,
-                            exemption bunks ensure exemption &gt; 75% and physical &gt; 65%.
+                            <strong>Predictor:</strong> Use +/- to see how future classes impact your percentage.
+                            Exemption simulates classes missed with an exemption: they count towards % (Med) but not physical %.<br />
+                            Normal bunks keep physical attendance &ge; 75%,
+                            exemption bunks keep exemption &ge; 75% and physical &ge; 65%.
                         </div>
                         <button className="close-btn" onClick={() => setShowPopup(false)}>×</button>
                     </div>
