@@ -60,8 +60,6 @@ EasyCollege_Frontend/
 | `/cgpa` | `Cgpa` | Private |
 | `/internals` | `Internals` | Private |
 | `/feedback` | `Feedback` | Private. Redirects to the external `feedbackauto.streamlit.app`. |
-| `/admin` | `Admin` | Own password screen. Not linked anywhere in the UI. |
-| `/aiml-dashboard` | `AimlDashboard` | Own password screen. Not linked anywhere in the UI. |
 | `/about` | `About` | Public |
 | `*` | `NotFound` | Public |
 
@@ -70,7 +68,7 @@ EasyCollege_Frontend/
 ## Talking to the backend
 
 - **Base URL:** read from `import.meta.env.VITE_API_BASE_URL`. There is no shared API client; each page or component builds its own `fetch` call.
-- **Inconsistent fallbacks:** `Navbar` and `Dashboard` fall back to `http://localhost:5001`; `Attendance`, `Gpa`, `Cgpa`, `Internals` and `AimlDashboard` fall back to `''` (same origin); `Login` and `Admin` have no fallback. **Always set `VITE_API_BASE_URL`.**
+- **Inconsistent fallbacks:** `Navbar` and `Dashboard` fall back to `http://localhost:5001`; `Attendance`, `Gpa`, `Cgpa` and `Internals` fall back to `''` (same origin); `Login` has no fallback. **Always set `VITE_API_BASE_URL`.**
 - **Request shape:** data requests are `POST` with the JSON body `{ auth_token, force_refresh }`. The refresh button on the data pages sends `force_refresh: true`, which skips the backend's Fast Mode cache.
 - **Errors:** the page shows the response's `error` field. A 401 does **not** log the user out or redirect.
 
@@ -86,8 +84,6 @@ Endpoint details are in the [backend README](../EasyCollege_Backend/README.md#ap
 | **GPA** | `/api/gpa` | Latest-semester courses. Courses can be excluded to recalculate the GPA locally. Shows an info modal once. |
 | **CGPA** | `/api/cgpa` | Totals, a per-semester SGPA/CGPA table, a course list with exclusions, and a Chart.js trend line. Shows an info modal once. |
 | **Internals** | `/api/internals` | CA marks for each course: Total against its real maximum (`total_max`), converted mark, and a breakdown. The calculations live in `src/utils/internalsSimulation.js` (tested by `tests/internalsSimulation.test.js`): `analyzeComponents` maps `row_data` columns for the layouts it knows (`SIMULATOR_TABLE_IDS`: `8^1600/1601/1602`, `8^2210`, `8^2220`, `8^1890`, `8^2260`); other tables show the backend's heading-matched `components` instead. Only known layouts get the simulator and `calculateNeededForNext` (the CA2 increase for one more /40 mark, shown once eCampus's Total is in and no cell is pending). For `8^2260` T1/T2 are shown and entered as percentages, because that programme's paper maximum isn't known (40 with half marks or 80). |
-| **Admin** | see below | Student search |
-| **AIML Dashboard** | `/api/aiml/verify`, `/api/buddy-compare` | After the password gate, you enter two students' credentials. Shows their marks, GPA/CGPA, per-course differences and the mean squared error between them. |
 | **About / NotFound** | none | Static |
 
 The **Navbar** also handles:
@@ -95,30 +91,6 @@ The **Navbar** also handles:
 - **Fast Mode:** a toggle that calls `POST /api/settings/opt-in`. It is updated optimistically and reverted if the call fails.
 - **Feedback modal:** `POST /api/submit-feedback`.
 - **Logout:** clears the stored session keys.
-
-## Student search (Admin page)
-
-```mermaid
-sequenceDiagram
-    participant A as Admin page
-    participant API as Backend
-    A->>API: POST /api/admin/verify {password}
-    API-->>A: {token}
-    Note over A: admin_token saved in sessionStorage
-    A->>API: GET /api/admin/student-info/ROLL<br/>Authorization: Bearer admin_token
-    API-->>A: {student profile, student_auth_token}
-    Note over A,API: Sequential calls, each with auth_token = student_auth_token
-    A->>API: POST /api/attendance
-    A->>API: POST /api/gpa
-    A->>API: POST /api/cgpa
-    A->>API: POST /api/internals
-    Note over A: Tabs: Attendance / Internals / GPA & CGPA
-```
-
-- The roll number is trimmed and uppercased before the request.
-- A student can only be found after they have logged into EasyCollege at least once. The backend builds `student_auth_token` from the credentials it stored at that login.
-- Each data call is a live eCampus scrape, unless that student has Fast Mode on and a valid cache.
-- "Logout" on this page only clears `admin_token`.
 
 ## Browser storage
 
@@ -130,7 +102,6 @@ The app uses no global state library or React context. Session state lives in br
 | `auth_token` | localStorage | Login | Logout | Encrypted backend token sent with every data request |
 | `fastMode` | localStorage | Navbar | Never | UI state of Fast Mode |
 | `gpa_modal_shown`, `cgpa_modal_shown` | localStorage | Gpa / Cgpa | Never | Show the info modal only once |
-| `admin_token` | sessionStorage | Admin | Admin logout / tab close | Admin session |
 
 Logout also removes the legacy keys `credentials` and `login_type`, which nothing sets any more.
 
@@ -189,9 +160,7 @@ When deploying on Vercel:
 These are client-side aspects of the backend issues documented in the [backend Security section](../EasyCollege_Backend/README.md#security-findings).
 
 - **`auth_token` in localStorage:** the token contains the user's encrypted eCampus password and never expires. Any script running on the page (for example through an XSS bug) can read it, and logging out does not invalidate it on the server.
-- **Client-only route guards:** `PrivateRoute` checks only that `localStorage.user` exists, and the AIML gate is just React state (`isAuthorized`). The backend endpoints behind them, including `/api/buddy-compare`, can be called directly.
-- **Credentials in the AIML page:** two students' eCampus passwords are typed into this page and sent to the backend in plain JSON. They are kept only in component state.
-- **Hidden admin routes:** `/admin` and `/aiml-dashboard` are not linked in the UI, but they are included in the public bundle. Their security depends entirely on the backend password checks.
+- **Client-only route guards:** `PrivateRoute` checks only that `localStorage.user` exists. The backend endpoints behind it can be called directly.
 
 ## Unused and incomplete functionality
 
