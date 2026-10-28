@@ -26,10 +26,22 @@ export const updateSimulation = (prev, courseCode, type, delta) => {
     };
 };
 
+// Clears one course's predictor inputs, putting that course back to its real attendance.
+export const resetSimulation = (prev, courseCode) => {
+    const { [courseCode]: _removed, ...rest } = prev;
+    return rest;
+};
+
 // The predictor needs total_exemption_hours from the backend: the Exemption Hours column plus any
 // medical leave that only eCampus's "% with Exemp Med" counts. Attendance cached before the backend
 // returned it (served by the stale-cache fallback) does not have it.
 export const canSimulate = (course) => Number.isInteger(course.total_exemption_hours) && course.total_exemption_hours >= 0;
+
+// Percentages arrive as "75%" from the backend but as "76" from the predictor; always show exactly one "%".
+export const formatPercent = (value) => {
+    const number = parseFloat(value);
+    return Number.isFinite(number) ? `${number}%` : '—';
+};
 
 // Shows a "need to attend" count as negative; zero (including -0) is shown as "0".
 export const formatBunks = (course) => {

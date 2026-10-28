@@ -160,6 +160,28 @@
     padding: 2px 4px;
 }
 
+.predictor-reset {
+    align-self: flex-end;
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+    padding: 3px 5px;
+}
+
+.predictor-reset:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.predictor-reset:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+}
+
 .predictor-stepper-value {
     font-size: 12px;
     padding: 0 4px;

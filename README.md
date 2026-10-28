@@ -42,7 +42,8 @@ EasyCollege_Frontend/
     │   ├── Modal.jsx          Simple info modal (GPA/CGPA)
     │   └── FeedbackWidget.jsx Floating feedback button (not used; see end)
     ├── utils/
-    │   └── attendanceSimulation.js  Attendance predictor maths (pure functions)
+    │   ├── attendanceSimulation.js  Attendance predictor maths (pure functions)
+    │   └── internalsSimulation.js   Internals column mapping, totals and CA2 target (pure functions)
     └── pages/                 One component per route
 ```
 
@@ -84,7 +85,7 @@ Endpoint details are in the [backend README](../EasyCollege_Backend/README.md#ap
 | **Attendance** | `/api/attendance` | Per-course table, colour-coded (≥75 good, ≥65 medium, otherwise low). A **simulator** adds hypothetical attended, bunked or exempted classes and recomputes the status in the browser with the same 75%/65% rules as the backend (`src/utils/attendanceSimulation.js`). It uses `total_exemption_hours` from the API (the Exemption Hours column plus medical leave recovered from eCampus's Med %) and shows simulated percentages rounded up, as eCampus does. An exempted class adds to total and absent hours and counts towards % with exemption, not physical %. If `total_exemption_hours` is missing (stale attendance cached before it existed), the course shows "Reload to predict" instead of controls. The Bunks cell shows "Classes to attend" counts as negative and zero as "0". The Med Bunks search stops at 70 (the backend has no limit). Simulator inputs live only in page state; they are never stored or sent to the API. |
 | **GPA** | `/api/gpa` | Latest-semester courses. Courses can be excluded to recalculate the GPA locally. Shows an info modal once. |
 | **CGPA** | `/api/cgpa` | Totals, a per-semester SGPA/CGPA table, a course list with exclusions, and a Chart.js trend line. Shows an info modal once. |
-| **Internals** | `/api/internals` | CA marks for each course. `analyzeComponents` maps `row_data` columns to tests, assignments, MCQs or lab components according to `table_id`. A simulator lets you edit components, and `calculateNeededForNext` shows the CA2 increase needed for one more /40 mark. |
+| **Internals** | `/api/internals` | CA marks for each course: Total against its real maximum (`total_max`), converted mark, and a breakdown. The calculations live in `src/utils/internalsSimulation.js` (tested by `tests/internalsSimulation.test.js`): `analyzeComponents` maps `row_data` columns for the layouts it knows (`SIMULATOR_TABLE_IDS`: `8^1600/1601/1602`, `8^2210`, `8^2220`, `8^1890`, `8^2260`); other tables show the backend's heading-matched `components` instead. Only known layouts get the simulator and `calculateNeededForNext` (the CA2 increase for one more /40 mark, shown once eCampus's Total is in and no cell is pending). For `8^2260` T1/T2 are shown and entered as percentages, because that programme's paper maximum isn't known (40 with half marks or 80). |
 | **Admin** | see below | Student search |
 | **AIML Dashboard** | `/api/aiml/verify`, `/api/buddy-compare` | After the password gate, you enter two students' credentials. Shows their marks, GPA/CGPA, per-course differences and the mean squared error between them. |
 | **About / NotFound** | none | Static |
@@ -165,7 +166,7 @@ npm test           # node:test unit tests in tests/ (no extra dependencies)
 
 ## Testing
 
-`npm test` runs `tests/*.test.js` with Node's built-in `node:test`. It covers the attendance predictor in `src/utils/attendanceSimulation.js` (the same functions the page uses) against hand-derived expected values in `../test_data/attendance_cases.json`, which the backend tests also use. There are no component or browser tests.
+`npm test` runs `tests/*.test.js` with Node's built-in `node:test`. It covers the attendance predictor in `src/utils/attendanceSimulation.js` (the same functions the page uses) against hand-derived expected values in `../test_data/attendance_cases.json`, which the backend tests also use, and the Internals calculations in `src/utils/internalsSimulation.js` against real eCampus rows (totals equal eCampus's own, CA2 targets reach the next mark, simulator only for verified layouts). There are no component or browser tests.
 
 `node test.js` prints two predictor results using the same module.
 

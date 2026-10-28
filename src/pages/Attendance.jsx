@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Info, Plus, Minus, Wand2, Save, CloudOff, RefreshCw } from 'lucide-react';
+import { Info, Plus, Minus, Wand2, Save, CloudOff, RefreshCw, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { simulateCourse, updateSimulation, canSimulate, formatBunks } from '../utils/attendanceSimulation';
+import { simulateCourse, updateSimulation, resetSimulation, canSimulate, formatBunks, formatPercent } from '../utils/attendanceSimulation';
 import './Attendance.css';
 
 function Attendance() {
@@ -54,6 +54,10 @@ function Attendance() {
         setSimulation(prev => updateSimulation(prev, courseCode, type, value));
     };
 
+    const handleResetSimulation = (courseCode) => {
+        setSimulation(prev => resetSimulation(prev, courseCode));
+    };
+
     const simulatedData = attendanceData.map(course => simulateCourse(course, simulation[course.course_code]));
 
     const renderStepper = (course, type, label, value) => (
@@ -87,6 +91,14 @@ function Attendance() {
             {renderStepper(course, 'attend', 'Attend', course.simAttend)}
             {renderStepper(course, 'bunk', 'Bunk', course.simBunk)}
             {renderStepper(course, 'exemption', 'Exemption', course.simExemption)}
+            <button
+                type="button"
+                className="predictor-reset"
+                onClick={() => handleResetSimulation(course.course_code)}
+                disabled={!course.isSimulated}
+                aria-label={`Reset predictions for ${course.course_code}`}
+                title="Reset predictions"
+            ><RotateCcw size={12} /></button>
         </div>
     );
 
@@ -217,11 +229,11 @@ function Attendance() {
                                         <td style={{ fontWeight: 600 }}>{course.present_hours}</td>
                                         <td style={{ fontWeight: 600 }}>{course.absent_hours}</td>
                                         <td className={`percentage-cell ${getAttendanceClass(course.physical_attendance)}`}>
-                                            {course.physical_attendance}
+                                            {formatPercent(course.physical_attendance)}
                                             {course.isSimulated && <span style={{ fontSize: '10px', display: 'block' }}>Simulated</span>}
                                         </td>
                                         <td className={`percentage-cell ${getAttendanceClass(course.with_exemption)}`}>
-                                            {course.with_exemption}
+                                            {formatPercent(course.with_exemption)}
                                         </td>
                                         <td style={{ fontWeight: 700, color: course.status !== "Remaining bunks" ? '#f87171' : '#ccc' }}>
                                             {formatBunks(course)}
@@ -256,12 +268,12 @@ function Attendance() {
                                         <div className="stat-item">
                                             <div className="stat-label">Physical Attendance</div>
                                             <div className={`stat-value ${getAttendanceClass(course.physical_attendance)}`}>
-                                                {course.physical_attendance}%
+                                                {formatPercent(course.physical_attendance)}
                                             </div>
                                         </div>
                                         <div className="stat-item">
                                             <div className="stat-label">With Exemption</div>
-                                            <div className="stat-value">{course.with_exemption}%</div>
+                                            <div className="stat-value">{formatPercent(course.with_exemption)}</div>
                                         </div>
                                     </div>
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, RefreshCw, AlertCircle, CheckCircle2, Wand2, ArrowLeft, Save, TrendingUp } from 'lucide-react';
+import { SIMULATOR_TABLE_IDS, analyzeComponents, calculateTotal, calculateNeededForNext } from '../utils/internalsSimulation';
 import './Internals.css';
 
 function Internals() {
@@ -43,70 +44,6 @@ function Internals() {
         }
     }, []);
 
-    const analyzeComponents = (course) => {
-        const { table_id, row_data } = course;
-        const result = {
-            t1: null, t2: null, ap: null, ap1: null, ap2: null, mq1: null, mq2: null,
-            ir1: null, ir2: null, plro1: null, plro2: null
-        };
-
-        const parse = (val) => {
-            if (!val || val === "*" || val === "Pending" || val === "") return null;
-            return parseFloat(val);
-        };
-
-        if (table_id === '8^1600' || table_id === '8^1601' || table_id === '8^1602') {
-            result.ir1 = parse(row_data[2]);
-            result.ir2 = parse(row_data[3]);
-            result.plro1 = parse(row_data[4]);
-            result.plro2 = parse(row_data[5]);
-            result.type = 'lab';
-        } else if (table_id === '8^2210') {
-            // Reverse convert displayed / 0.6 to get raw component
-            result.t1 = parse(row_data[2]) !== null ? parse(row_data[2]) / 0.6 : null;
-            result.t2 = parse(row_data[3]) !== null ? parse(row_data[3]) / 0.6 : null;
-            result.ap = parse(row_data[5]);
-            result.mq1 = parse(row_data[6]);
-            result.mq2 = parse(row_data[7]);
-            result.type = 'theory';
-        } else if (table_id === '8^2220') {
-            result.t1 = parse(row_data[2]) !== null ? parse(row_data[2]) / 0.6 : null;
-            result.t2 = parse(row_data[3]) !== null ? parse(row_data[3]) / 0.6 : null;
-            result.ap1 = parse(row_data[5]);
-            result.ap2 = parse(row_data[6]);
-            result.mq1 = parse(row_data[7]);
-            result.mq2 = parse(row_data[8]);
-            result.type = 'theory_split';
-        }
-
-        return result;
-    };
-
-    const calculateTotal = (data) => {
-        let testTotal = 0;
-        let mcqTotal = 0;
-        let apTotal = 0;
-        let labTotal = 0;
-
-        const val = (v) => v === null ? 0 : v;
-
-        if (data.type === 'lab') {
-            labTotal = val(data.ir1) + val(data.ir2) + val(data.plro1) + val(data.plro2);
-            return { raw: labTotal, 50: labTotal, converted: Math.round(labTotal * 1.2), max: 60 };
-        } else {
-            // Input T1/T2 are now Raw out of 50. Convert to 30 before averaging.
-            const t1_displayed = val(data.t1) * 0.6;
-            const t2_displayed = val(data.t2) * 0.6;
-            testTotal = (t1_displayed + t2_displayed) / 2;
-
-            mcqTotal = (val(data.mq1) + val(data.mq2)) / 2;
-            apTotal = data.type === 'theory_split' ? val(data.ap1) + val(data.ap2) : val(data.ap);
-
-            const total50 = testTotal + mcqTotal + apTotal;
-            return { raw: total50.toFixed(2), 50: total50, converted: Math.round(total50 * 0.8), max: 40 };
-        }
-    };
-
     const handleSimChange = (courseCode, component, value) => {
         setSimData(prev => ({
             ...prev,
@@ -115,47 +52,6 @@ function Internals() {
                 [component]: value === '' ? null : parseFloat(value)
             }
         }));
-    };
-
-    const calculateNeededForNext = (course) => {
-        if (!course.total || course.total === "Not Updated Yet") return null;
-
-        // Only show for theory courses
-        if (course.is_lab) return null;
-
-        // Check if everything is filled (no * or Pending in row_data)
-        const hasPending = course.row_data && course.row_data.some(val =>
-            val === "*" || val === "Pending" || val === ""
-        );
-        if (hasPending) return null;
-
-        const currentTotal = parseFloat(course.total);
-        if (isNaN(currentTotal)) return null;
-
-        const current40 = Math.round(currentTotal * 0.8);
-        const target40 = current40 + 1;
-
-        const targetThreshold40 = target40 - 0.5;
-        const targetTotal50 = targetThreshold40 / 0.8;
-
-        const neededIncreaseTotal = targetTotal50 - currentTotal;
-
-        // Needed increase in test average
-        const neededIncreaseAvg = neededIncreaseTotal;
-
-        // Needed increase in sum of T1+T2 (displayed)
-        const neededIncreaseSumDisplayed = neededIncreaseAvg * 2;
-
-        // Conversion from raw 50 to displayed 30: Displayed = Raw * 0.6
-        const neededIncreaseRaw = neededIncreaseSumDisplayed / 0.6;
-
-        // Ceil to 0.5
-        const ceiledIncrease = Math.ceil(neededIncreaseRaw * 2) / 2;
-
-        return {
-            target: target40,
-            increaseRaw: Math.max(0, ceiledIncrease).toFixed(1)
-        };
     };
 
     useEffect(() => {
@@ -223,7 +119,7 @@ function Internals() {
                                     <tr>
                                         <th>Subject</th>
                                         <th>Split Up</th>
-                                        <th>Total (50)</th>
+                                        <th>Total</th>
                                         <th>Final Converted</th>
                                         <th>Goal Prediction</th>
                                         <th>Action</th>
@@ -233,10 +129,11 @@ function Internals() {
                                     {[...internalsData]
                                         .sort((a, b) => (a.is_lab === b.is_lab ? 0 : a.is_lab ? 1 : -1))
                                         .map((course, index) => {
-                                            const isSimulating = simulatingId === course.course_code;
+                                            const hasSimulator = SIMULATOR_TABLE_IDS.includes(course.table_id);
+                                            const isSimulating = hasSimulator && simulatingId === course.course_code;
                                             const currentSimData = simData[course.course_code] || analyzeComponents(course);
                                             const calculated = calculateTotal(currentSimData);
-                                            const prediction = calculateNeededForNext(course);
+                                            const prediction = hasSimulator ? calculateNeededForNext(course) : null;
 
                                             // Helper to get split up display
                                             const components = analyzeComponents(course);
@@ -246,6 +143,15 @@ function Internals() {
                                                 if (components.ir2 !== null) splitItems.push({ label: 'IR2', val: components.ir2 });
                                                 if (components.plro1 !== null) splitItems.push({ label: 'PL1', val: components.plro1 });
                                                 if (components.plro2 !== null) splitItems.push({ label: 'PL2', val: components.plro2 });
+                                            } else if (components.type === 'lab_lt') {
+                                                if (components.lt1 !== null) splitItems.push({ label: 'LT1', val: components.lt1 });
+                                                if (components.lt2 !== null) splitItems.push({ label: 'LT2', val: components.lt2 });
+                                            } else if (components.type === 'theory_mp') {
+                                                if (components.t1 !== null) splitItems.push({ label: 'T1', val: `${Math.round(components.t1 * 10) / 10}%` });
+                                                if (components.t2 !== null) splitItems.push({ label: 'T2', val: `${Math.round(components.t2 * 10) / 10}%` });
+                                                if (components.ap !== null) splitItems.push({ label: 'AP', val: components.ap });
+                                                if (components.mp1 !== null) splitItems.push({ label: 'MP1', val: components.mp1 });
+                                                if (components.mp2 !== null) splitItems.push({ label: 'MP2', val: components.mp2 });
                                             } else if (components.type === 'theory' || components.type === 'theory_split') {
                                                 if (components.t1 !== null) splitItems.push({ label: 'CA1', val: Math.round(components.t1 * 10) / 10 });
                                                 if (components.t2 !== null) splitItems.push({ label: 'CA2', val: Math.round(components.t2 * 10) / 10 });
@@ -259,6 +165,14 @@ function Internals() {
 
                                                 if (components.mq1 !== null) splitItems.push({ label: 'MQ1', val: components.mq1 });
                                                 if (components.mq2 !== null) splitItems.push({ label: 'MQ2', val: components.mq2 });
+                                            }
+
+                                            // Tables without a hand-written breakdown (e.g. EVS, Activity Points, layouts we haven't seen):
+                                            // use the components the backend matched to eCampus's own headings. Pending marks are skipped.
+                                            if (splitItems.length === 0 && Array.isArray(course.components)) {
+                                                course.components.forEach(({ name, value }) => {
+                                                    if (value && value !== '*') splitItems.push({ label: name, val: value });
+                                                });
                                             }
 
                                             return (
@@ -283,7 +197,7 @@ function Internals() {
                                                         <td>
                                                             <div className="mark-cell-value">
                                                                 {course.total}
-                                                                {course.total !== "Not Updated Yet" && <span className="max-mark">/ 50</span>}
+                                                                {course.total !== "Not Updated Yet" && <span className="max-mark">/ {course.total_max ?? 50}</span>}
                                                             </div>
                                                         </td>
                                                         <td>
@@ -303,13 +217,17 @@ function Internals() {
                                                             )}
                                                         </td>
                                                         <td>
-                                                            <button
-                                                                className={`sim-toggle ${isSimulating ? 'active' : ''}`}
-                                                                onClick={() => setSimulatingId(isSimulating ? null : course.course_code)}
-                                                                title={isSimulating ? "Close Simulator" : "Interactive Simulator"}
-                                                            >
-                                                                {isSimulating ? <ArrowLeft size={16} /> : <Wand2 size={16} />}
-                                                            </button>
+                                                            {hasSimulator ? (
+                                                                <button
+                                                                    className={`sim-toggle ${isSimulating ? 'active' : ''}`}
+                                                                    onClick={() => setSimulatingId(isSimulating ? null : course.course_code)}
+                                                                    title={isSimulating ? "Close Simulator" : "Interactive Simulator"}
+                                                                >
+                                                                    {isSimulating ? <ArrowLeft size={16} /> : <Wand2 size={16} />}
+                                                                </button>
+                                                            ) : (
+                                                                <span className="no-goal">—</span>
+                                                            )}
                                                         </td>
                                                     </tr>
 
@@ -331,6 +249,19 @@ function Internals() {
                                                                                     <div className="sim-field"><label>PLRO I (10)</label><input type="number" step="0.1" value={currentSimData.plro1 !== null ? currentSimData.plro1 : ''} onChange={(e) => handleSimChange(course.course_code, 'plro1', e.target.value)} /></div>
                                                                                     <div className="sim-field"><label>PLRO II (10)</label><input type="number" step="0.1" value={currentSimData.plro2 !== null ? currentSimData.plro2 : ''} onChange={(e) => handleSimChange(course.course_code, 'plro2', e.target.value)} /></div>
                                                                                 </>
+                                                                            ) : currentSimData.type === 'lab_lt' ? (
+                                                                                <>
+                                                                                    <div className="sim-field"><label>LT1 (30)</label><input type="number" step="0.1" value={currentSimData.lt1 !== null ? currentSimData.lt1 : ''} onChange={(e) => handleSimChange(course.course_code, 'lt1', e.target.value)} /></div>
+                                                                                    <div className="sim-field"><label>LT2 (30)</label><input type="number" step="0.1" value={currentSimData.lt2 !== null ? currentSimData.lt2 : ''} onChange={(e) => handleSimChange(course.course_code, 'lt2', e.target.value)} /></div>
+                                                                                </>
+                                                                            ) : currentSimData.type === 'theory_mp' ? (
+                                                                                <>
+                                                                                    <div className="sim-field"><label>T1 (%)</label><input type="number" step="0.1" min="0" max="100" value={currentSimData.t1 !== null ? Math.round(currentSimData.t1 * 10) / 10 : ''} onChange={(e) => handleSimChange(course.course_code, 't1', e.target.value)} /></div>
+                                                                                    <div className="sim-field"><label>T2 (%)</label><input type="number" step="0.1" min="0" max="100" value={currentSimData.t2 !== null ? Math.round(currentSimData.t2 * 10) / 10 : ''} onChange={(e) => handleSimChange(course.course_code, 't2', e.target.value)} /></div>
+                                                                                    <div className="sim-field"><label>AP (8)</label><input type="number" step="0.1" value={currentSimData.ap !== null ? currentSimData.ap : ''} onChange={(e) => handleSimChange(course.course_code, 'ap', e.target.value)} /></div>
+                                                                                    <div className="sim-field"><label>MP / T1 (6)</label><input type="number" step="0.1" value={currentSimData.mp1 !== null ? currentSimData.mp1 : ''} onChange={(e) => handleSimChange(course.course_code, 'mp1', e.target.value)} /></div>
+                                                                                    <div className="sim-field"><label>MP / T2 (6)</label><input type="number" step="0.1" value={currentSimData.mp2 !== null ? currentSimData.mp2 : ''} onChange={(e) => handleSimChange(course.course_code, 'mp2', e.target.value)} /></div>
+                                                                                </>
                                                                             ) : (
                                                                                 <>
                                                                                     <div className="sim-field"><label>CA1 (out of 50)</label><input type="number" step="0.1" value={currentSimData.t1 !== null ? Math.round(currentSimData.t1 * 10) / 10 : ''} onChange={(e) => handleSimChange(course.course_code, 't1', e.target.value)} /></div>
@@ -350,7 +281,7 @@ function Internals() {
                                                                         </div>
                                                                         <div className="sim-result">
                                                                             <div className="sim-res-item">
-                                                                                <span>Internal (50): <strong>{calculated.raw}</strong></span>
+                                                                                <span>Internal ({calculated.outOf ?? 50}): <strong>{calculated.raw}</strong></span>
                                                                             </div>
                                                                             <div className="sim-res-item primary">
                                                                                 <span>Final ({calculated.max}): <strong>{calculated.converted}</strong></span>

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-    simulateCourse, updateSimulation, canSimulate, calculateAttendance, formatBunks, displayedPercent,
+    simulateCourse, updateSimulation, resetSimulation, canSimulate, calculateAttendance, formatBunks, formatPercent, displayedPercent,
     EMPTY_SIMULATION, MED_BUNKS_SEARCH_LIMIT
 } from '../src/utils/attendanceSimulation.js';
 
@@ -217,4 +217,53 @@ test('the page uses these functions and does not persist or send simulation stat
     assert.equal((src.match(/JSON\.stringify/g) || []).length, 1);
     assert.doesNotMatch(src, /(localStorage|sessionStorage)\.setItem/);
     assert.match(src, /formatBunks\(course\)/);
+});
+
+// ---------- Reset button ----------
+
+test('reset clears one course only and restores its real numbers', () => {
+    const base = deepFreeze(row({ total: 40, present: 30, absent: 10, exemption: 2 },
+        { physical_attendance: '75%', with_exemption: '80%', status: 'Remaining bunks', count: 0, exemption_bunks: 2 }));
+    let s = {};
+    s = updateSimulation(s, 'X', 'attend', 2);
+    s = updateSimulation(s, 'X', 'exemption', 3);
+    s = updateSimulation(s, 'Y', 'bunk', 1);
+    assert.equal(simulateCourse(base, s.X).isSimulated, true);
+
+    const frozen = deepFreeze(s);
+    const after = resetSimulation(frozen, 'X');
+    assert.equal(after.X, undefined);                                   // X cleared
+    assert.deepEqual(after.Y, { attend: 0, bunk: 1, exemption: 0 });   // Y untouched
+    assert.notEqual(after, frozen);                                     // previous state not mutated
+    assert.deepEqual(pick(simulateCourse(base, after.X)), pick(base));  // back to the real row
+    assert.equal(simulateCourse(base, after.X).isSimulated, false);
+    assert.deepEqual(resetSimulation({}, 'Z'), {});                     // resetting an untouched course is harmless
+});
+
+test('the page wires a reset button next to the predictor controls', () => {
+    const src = readFileSync(new URL('../src/pages/Attendance.jsx', import.meta.url), 'utf8');
+    assert.match(src, /setSimulation\(prev => resetSimulation\(prev, courseCode\)\)/);
+    assert.match(src, /onClick=\{\(\) => handleResetSimulation\(course\.course_code\)\}/);
+    assert.match(src, /disabled=\{!course\.isSimulated\}/);
+});
+
+// ---------- Percent display ----------
+
+test('percentages always show exactly one % (backend "75%", predictor "76")', () => {
+    assert.equal(formatPercent('75%'), '75%');   // from the backend
+    assert.equal(formatPercent('76'), '76%');    // from the predictor
+    assert.equal(formatPercent(76), '76%');
+    assert.equal(formatPercent('0'), '0%');
+    assert.equal(formatPercent(undefined), '—');
+    assert.equal(formatPercent(''), '—');
+    // Same course before and after using the predictor: one % both times.
+    const base = row({ total: 40, present: 30, absent: 10, exemption: 2 }, { physical_attendance: '75%', with_exemption: '80%' });
+    assert.equal(formatPercent(simulateCourse(base, {}).physical_attendance), '75%');
+    assert.equal(formatPercent(simulateCourse(base, { attend: 1 }).physical_attendance), '76%');  // 31/41 = 75.6 -> 76
+});
+
+test('the page prints percentages only through formatPercent', () => {
+    const src = readFileSync(new URL('../src/pages/Attendance.jsx', import.meta.url), 'utf8');
+    assert.doesNotMatch(src, /\{course\.(physical_attendance|with_exemption)\}/);   // no raw printing (table or cards)
+    assert.equal((src.match(/formatPercent\(course\.(physical_attendance|with_exemption)\)/g) || []).length, 4);
 });
