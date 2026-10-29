@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Info, Plus, Minus, Wand2, Save, CloudOff, RefreshCw, RotateCcw } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { simulateCourse, updateSimulation, resetSimulation, canSimulate, formatBunks, formatPercent } from '../utils/attendanceSimulation';
 import './Attendance.css';
 
@@ -10,6 +10,7 @@ function Attendance() {
     const [error, setError] = useState('');
     const [showPopup, setShowPopup] = useState(true);
     const [viewMode, setViewMode] = useState('table'); // 'cards' or 'table'
+    const reduceMotion = useReducedMotion();
     const [simulation, setSimulation] = useState({});
 
     const fetchAttendance = useCallback(async (forceRefresh = false) => {
@@ -54,7 +55,9 @@ function Attendance() {
         setSimulation(prev => updateSimulation(prev, courseCode, type, value));
     };
 
-    const handleResetSimulation = (courseCode) => {
+    const handleResetSimulation = (event, courseCode) => {
+        // The reset button unmounts once the prediction is cleared; keep focus inside this course's controls
+        event.currentTarget.closest('.predictor-controls')?.querySelector('button')?.focus({ preventScroll: true });
         setSimulation(prev => resetSimulation(prev, courseCode));
     };
 
@@ -91,14 +94,32 @@ function Attendance() {
             {renderStepper(course, 'attend', 'Attend', course.simAttend)}
             {renderStepper(course, 'bunk', 'Bunk', course.simBunk)}
             {renderStepper(course, 'exemption', 'Exemption', course.simExemption)}
-            <button
-                type="button"
-                className="predictor-reset"
-                onClick={() => handleResetSimulation(course.course_code)}
-                disabled={!course.isSimulated}
-                aria-label={`Reset predictions for ${course.course_code}`}
-                title="Reset predictions"
-            ><RotateCcw size={12} /></button>
+            <AnimatePresence initial={false}>
+                {course.isSimulated && (
+                    // Width grows with the fade, so the button wipes in rather than popping
+                    <motion.span
+                        key="reset"
+                        className="predictor-reset-slot"
+                        initial={{ width: 0, opacity: 0 }}
+                        animate={{
+                            width: 'auto', opacity: 1,
+                            transition: reduceMotion ? { duration: 0.15, width: { duration: 0 } } : { duration: 0.2, ease: [0.22, 1, 0.36, 1] }
+                        }}
+                        exit={{
+                            width: 0, opacity: 0,
+                            transition: reduceMotion ? { duration: 0.1, width: { duration: 0 } } : { duration: 0.14, ease: [0.4, 0, 1, 1] }
+                        }}
+                    >
+                        <button
+                            type="button"
+                            className="predictor-reset"
+                            onClick={(event) => handleResetSimulation(event, course.course_code)}
+                            aria-label={`Reset predictions for ${course.course_code}`}
+                            title="Reset predictions"
+                        ><RotateCcw size={12} /></button>
+                    </motion.span>
+                )}
+            </AnimatePresence>
         </div>
     );
 
@@ -230,7 +251,7 @@ function Attendance() {
                                         <td style={{ fontWeight: 600 }}>{course.absent_hours}</td>
                                         <td className={`percentage-cell ${getAttendanceClass(course.physical_attendance)}`}>
                                             {formatPercent(course.physical_attendance)}
-                                            {course.isSimulated && <span style={{ fontSize: '10px', display: 'block' }}>Simulated</span>}
+                                            {course.isSimulated && <span className="att-simulated-label">Simulated</span>}
                                         </td>
                                         <td className={`percentage-cell ${getAttendanceClass(course.with_exemption)}`}>
                                             {formatPercent(course.with_exemption)}

@@ -119,6 +119,17 @@
     font-weight: 700;
 }
 
+/* Zero-width box with its text overflowing evenly on both sides, so the label
+   never widens the % column (which would shift the predictor steppers). */
+.att-simulated-label {
+    display: flex;
+    justify-content: center;
+    width: 0;
+    margin-inline: auto;
+    font-size: 10px;
+    white-space: nowrap;
+}
+
 /* Predictor: Attend / Bunk / Exemption steppers stay on one row. The table's
    auto layout sizes the column to fit them; narrow screens scroll the
    table horizontally (.attendance-table-container). */
@@ -160,8 +171,68 @@
     padding: 2px 4px;
 }
 
-.predictor-reset {
+/* Animated wrapper for the reset button. By default (phone table) it sits in
+   flow after the steppers: the negative margin cancels the flex gap, so a
+   closed slot takes no space, and the button's margin restores it when open. */
+.predictor-reset-slot {
     align-self: flex-end;
+    display: flex;
+    overflow: hidden;
+    margin-left: -6px;
+}
+
+/* Table steppers start at the column's left edge, so nothing re-centres
+   (moves) when the reset button appears. */
+.attendance-modern-table .predictor-controls {
+    justify-content: flex-start;
+}
+
+/* From 700px the table fits the screen and there are 27px+ of empty space left
+   of the steppers (cell padding plus the centred Med Bunks value's margin). The
+   slot hangs there, outside the layout, so the table never changes width: no
+   steppers move and no scrollbar appears. Phones have only ~16px there, so they
+   keep the in-flow slot; their table already scrolls and grows to the right. */
+@media (min-width: 700px) {
+    .attendance-modern-table .predictor-controls {
+        position: relative;
+    }
+
+    .attendance-modern-table .predictor-reset-slot {
+        position: absolute;
+        right: 100%;
+        bottom: 0;
+        margin-left: 0;
+    }
+
+    .attendance-modern-table .predictor-reset {
+        margin-left: 0;
+        margin-right: 6px;
+    }
+}
+
+/* Cards: the steppers stay centred and the slot hangs just to their left,
+   outside the layout. */
+.attendance-card .predictor-controls {
+    position: relative;
+    width: fit-content;
+    margin-inline: auto;
+}
+
+.attendance-card .predictor-reset-slot {
+    position: absolute;
+    right: 100%;
+    bottom: 0;
+    margin-left: 0;
+}
+
+.attendance-card .predictor-reset {
+    margin-left: 0;
+    margin-right: 6px;
+}
+
+.predictor-reset {
+    flex-shrink: 0;
+    margin-left: 6px;
     display: flex;
     align-items: center;
     background: rgba(255, 255, 255, 0.1);
@@ -172,14 +243,9 @@
     padding: 3px 5px;
 }
 
-.predictor-reset:disabled {
-    opacity: 0.35;
-    cursor: default;
-}
-
 .predictor-reset:focus-visible {
     outline: 2px solid var(--primary);
-    outline-offset: 1px;
+    outline-offset: -2px; /* inset, since the slot clips overflow */
 }
 
 .predictor-stepper-value {

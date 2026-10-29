@@ -240,11 +240,12 @@ test('reset clears one course only and restores its real numbers', () => {
     assert.deepEqual(resetSimulation({}, 'Z'), {});                     // resetting an untouched course is harmless
 });
 
-test('the page wires a reset button next to the predictor controls', () => {
+test('the page shows a reset button next to the predictor controls only once a prediction is made', () => {
     const src = readFileSync(new URL('../src/pages/Attendance.jsx', import.meta.url), 'utf8');
     assert.match(src, /setSimulation\(prev => resetSimulation\(prev, courseCode\)\)/);
-    assert.match(src, /onClick=\{\(\) => handleResetSimulation\(course\.course_code\)\}/);
-    assert.match(src, /disabled=\{!course\.isSimulated\}/);
+    assert.match(src, /onClick=\{\(event\) => handleResetSimulation\(event, course\.course_code\)\}/);
+    assert.match(src, /closest\('\.predictor-controls'\)\?\.querySelector\('button'\)\?\.focus\(\{ preventScroll: true \}\)/);
+    assert.match(src, /\{course\.isSimulated && \([\s\S]*?className="predictor-reset-slot"[\s\S]*?className="predictor-reset"/);
 });
 
 // ---------- Percent display ----------
