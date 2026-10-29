@@ -88,7 +88,7 @@ Endpoint details are in the [backend README](../EasyCollege_Backend/README.md#ap
 
 The **Navbar** also handles:
 
-- **Fast Mode:** a toggle that calls `POST /api/settings/opt-in`. It is updated optimistically and reverted if the call fails.
+- **Fast Mode:** a toggle that calls `POST /api/settings/opt-in`. It is updated optimistically and reverted if the call fails. When the app loads (and right after login, since the Navbar does not remount), it reads the user's real setting from `POST /api/settings`, so all devices show the same state; the toggle is disabled until that answer arrives. If the read fails, the stored value is kept.
 - **Feedback modal:** `POST /api/submit-feedback`.
 - **Logout:** clears the stored session keys.
 
@@ -100,12 +100,12 @@ The app uses no global state library or React context. Session state lives in br
 |---|---|---|---|---|
 | `user` | localStorage | Login | Logout | Display name from eCampus (JSON string) |
 | `auth_token` | localStorage | Login | Logout | Encrypted backend token sent with every data request |
-| `fastMode` | localStorage | Navbar | Never | UI state of Fast Mode |
+| `fastMode` | localStorage | Navbar (toggle and app-load sync) | Logout | Last known Fast Mode state, shown until the server's value arrives |
 | `gpa_modal_shown`, `cgpa_modal_shown` | localStorage | Gpa / Cgpa | Never | Show the info modal only once |
 
 Logout also removes the legacy keys `credentials` and `login_type`, which nothing sets any more.
 
-`fastMode` is stored only in the browser. Login does not return the server's `caching_opt_in` value, so on a new device or browser the toggle can show "off" while caching is actually on for that user.
+The server's `caching_opt_in` is the source of truth for Fast Mode; `fastMode` is only a cache of it, refreshed on every app load.
 
 ## Configuration
 

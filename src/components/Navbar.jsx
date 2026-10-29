@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { LogOut, Info, Mail, LayoutDashboard, User, Zap, Menu, X, MessageSquarePlus, Send, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,6 +11,7 @@ function Navbar() {
 
     const SERVER_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
     const [isFastMode, setIsFastMode] = useState(localStorage.getItem('fastMode') === 'true');
+    const [isSyncingFastMode, setIsSyncingFastMode] = useState(false);
     const [showTooltip, setShowTooltip] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
@@ -45,7 +46,37 @@ function Navbar() {
         }
     };
 
+    // Fast Mode is one server-side setting per user; the localStorage copy is only what this browser last saw.
+    // On app load (and right after login, since the Navbar doesn't remount) read the real value so every device agrees.
+    useEffect(() => {
+        if (!isLoggedIn) return;
+        let cancelled = false;
+        setIsSyncingFastMode(true);
+        (async () => {
+            try {
+                const response = await fetch(`${SERVER_URL}/api/settings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ auth_token: localStorage.getItem('auth_token') })
+                });
+                const data = await response.json();
+                if (!cancelled && response.ok && typeof data.caching_opt_in === 'boolean') {
+                    setIsFastMode(data.caching_opt_in);
+                    localStorage.setItem('fastMode', data.caching_opt_in);
+                }
+            } catch (error) {
+                // Keep the stored value if the check fails (offline, cold start, older backend)
+                console.error('Fast Mode sync failed:', error);
+            } finally {
+                if (!cancelled) setIsSyncingFastMode(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [isLoggedIn, SERVER_URL]);
+
     const toggleFastMode = async () => {
+        // A tap before the server's value arrives could send the opposite of what the user meant
+        if (isSyncingFastMode) return;
         const newValue = !isFastMode;
         setIsFastMode(newValue);
         localStorage.setItem('fastMode', newValue);
@@ -84,6 +115,8 @@ function Navbar() {
         localStorage.removeItem('credentials'); // Keep for backward compatibility cleanup
         localStorage.removeItem('auth_token');
         localStorage.removeItem('login_type');
+        localStorage.removeItem('fastMode');
+        setIsFastMode(false);
         navigate('/');
     };
 
@@ -126,6 +159,7 @@ function Navbar() {
                         >
                             <button
                                 onClick={toggleFastMode}
+                                disabled={isSyncingFastMode}
                                 className={isFastMode ? "active-fast-mode" : ""}
                                 style={{
                                     color: isFastMode ? '#fb923c' : 'var(--text-secondary)',
