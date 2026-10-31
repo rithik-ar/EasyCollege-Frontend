@@ -1,211 +1,2069 @@
-.admin-page-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding: 40px 20px;
-    min-height: calc(100vh - 80px);
+/* Admin console. Its own layout (hairline rules, mono labels) in the app's original colours:
+   black surfaces, slate text, one blue signal for UI state.
+   Data colours are the validated categorical slots (--adm-s1..s4, CVD-checked on --adm-bg);
+   status colours are reserved for state and always ship with an icon or label.
+   Every class is prefixed adm- because page CSS is global once bundled. */
+
+.adm {
+    /* App palette (index.css): black, slate text, blue primary, green / yellow / red status */
+    --adm-bg: #000000;
+    --adm-panel: #0f0f10;
+    --adm-raise: #141414;
+    --adm-line: #1a1a1a;
+    --adm-line-strong: #262626;
+    --adm-text: #f8fafc;
+    --adm-text-2: #94a3b8;
+    --adm-text-3: #71809a; /* slate-500 lifted to 4.5:1 on black for small labels */
+    --adm-accent: #3b82f6;
+    --adm-accent-fill: #2563eb; /* filled controls: white text needs 4.5:1, which #3b82f6 misses */
+    --adm-accent-ink: #ffffff;
+    --adm-s1: #3b82f6;
+    --adm-s2: #d95926;
+    --adm-s3: #199e70;
+    --adm-s4: #c98500;
+    --adm-track: #172a4a;
+    --adm-ring-1: #3b82f6; /* ring steps: one hue, validated as an ordinal set on black */
+    --adm-ring-2: #60a5fa;
+    --adm-ring-3: #93c5fd;
+    --adm-good: #22c55e;
+    --adm-good-text: #22c55e;
+    --adm-warning: #eab308;
+    --adm-critical: #ef4444;
+    --adm-critical-text: #ef4444;
+    --adm-sans: 'Inter Tight', 'Inter', system-ui, sans-serif;
+    --adm-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    --adm-top: 0px; /* the student navbar isn't rendered on /admin */
+
+    color-scheme: dark;
+    background-color: var(--adm-bg);
+    color: var(--adm-text);
+    font-family: var(--adm-sans);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    min-height: calc(100vh - var(--adm-top));
 }
 
-.admin-main-card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid var(--glass-border);
-    border-radius: 24px;
-    padding: 40px;
-    width: 100%;
-    max-width: 900px;
-    box-shadow: var(--shadow-md);
+/* body reserves room for the fixed student navbar (index.css); the console has none */
+body.adm-body {
+    padding-top: 0;
+    background: #000000;
 }
 
-.admin-header-section {
-    text-align: center;
-    margin-bottom: 40px;
+/* :where() keeps this reset at element specificity, so component classes can set colour and type */
+:where(.adm) button,
+:where(.adm) input {
+    font: inherit;
+    color: inherit;
 }
 
-.admin-header-section h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 8px;
-    background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+.adm :focus-visible {
+    outline: 2px solid var(--adm-accent);
+    outline-offset: 2px;
+}
+
+/* ---------- type ---------- */
+
+.adm-kicker {
+    font-family: var(--adm-mono);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--adm-text-3);
+}
+
+.adm-kicker-meta {
+    margin-left: 10px;
+    color: var(--adm-text-3);
+    opacity: 0.8;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.adm-title {
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-top: 6px;
+}
+
+.adm-mono {
+    font-family: var(--adm-mono);
+}
+
+.adm-dim {
+    color: var(--adm-text-3);
+}
+
+.adm-num {
+    font-family: var(--adm-mono);
+    font-variant-numeric: tabular-nums;
+}
+
+.adm-footnote {
+    font-size: 0.75rem;
+    color: var(--adm-text-3);
+    margin-top: 10px;
+}
+
+.adm-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* ---------- brand ---------- */
+
+.adm-brand {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 10px;
+    font-family: var(--adm-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--adm-text-2);
+}
+
+.adm-brand-mark {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background: var(--adm-accent);
+}
+
+/* ---------- gate ---------- */
+
+.adm-gate {
+    display: grid;
+    place-items: center;
+    padding: 32px 16px;
+    background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
+    background-size: 24px 24px;
+}
+
+.adm-gate-panel {
+    width: min(460px, 100%);
+    background: var(--adm-panel);
+    border: 1px solid var(--adm-line-strong);
+    border-radius: 10px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
     gap: 16px;
 }
 
-.admin-header-section p {
-    color: var(--text-secondary);
-    font-size: 0.95rem;
+.adm-gate-title {
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-top: 12px;
 }
 
-.admin-auth-container, .admin-search-container {
-    max-width: 500px;
-    margin: 0 auto;
-}
+/* ---------- shell ---------- */
 
-.search-results-container {
-    margin-top: 40px;
+/* Phones: the section bar is a compact sticky layer at the top; content scrolls beneath it */
+.adm-side {
+    position: sticky;
+    top: var(--adm-top);
+    z-index: 20;
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 24px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'nav lock';
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--adm-line);
+    background: rgba(0, 0, 0, 0.72);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    backdrop-filter: blur(16px) saturate(160%);
 }
 
-.student-summary-card {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--glass-border);
-    border-radius: 20px;
-    padding: 24px;
+.adm-side .adm-brand {
+    display: none;
+}
+
+.adm-nav {
+    grid-area: nav;
+}
+
+.adm-side-foot {
+    display: contents;
+}
+
+.adm-lock {
+    grid-area: lock;
+    display: inline-grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 1px solid var(--adm-line);
+    border-radius: 6px;
+    background: none;
+    color: var(--adm-text-2);
+    cursor: pointer;
+    transition: color 120ms ease, background-color 120ms ease, transform 100ms ease-out;
+}
+
+.adm-lock-label,
+.adm-rings,
+.adm-week {
+    display: none;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    .adm-side {
+        background: var(--adm-bg);
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}
+
+.adm-nav {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-left: -16px;
+    padding: 2px 16px;
+    scroll-padding-inline: 16px;
+    /* Scroll edge: pills fade where they run under the edges instead of being cut by a hard line */
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 16px, #000 calc(100% - 20px), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 16px, #000 calc(100% - 20px), transparent);
+}
+
+.adm-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.adm-nav-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    padding: 8px 12px;
+    border: 1px solid var(--adm-line);
+    border-radius: 6px;
+    background: none;
+    color: var(--adm-text-2);
+    font-weight: 500;
+    cursor: pointer;
+    isolation: isolate;
+    transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease, transform 100ms ease-out;
+}
+
+.adm-nav-item.is-active {
+    color: var(--adm-accent-ink);
+    border-color: transparent;
+}
+
+/* The sliding indicator (framer-motion layoutId) sits behind the item's content */
+.adm-nav-active {
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: 6px;
+    background: var(--adm-accent-fill);
+}
+
+.adm-nav-key {
+    display: none;
+}
+
+.adm-badge {
+    font-family: var(--adm-mono);
+    font-size: 0.6875rem;
+    line-height: 1;
+    padding: 3px 6px;
+    border-radius: 999px;
+    background: var(--adm-line-strong);
+    color: var(--adm-text);
+}
+
+.adm-badge.is-alarm {
+    background: #dc2626; /* one step darker than --adm-critical so white text reaches 4.5:1 */
+    color: #fff;
+}
+
+.adm-main {
+    min-width: 0;
+    padding: 20px 16px 64px;
+    background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.04) 1px, transparent 0);
+    background-size: 24px 24px;
+}
+
+.adm-head {
+    margin-bottom: 24px;
+}
+
+@media (min-width: 900px) {
+    .adm-shell {
+        display: grid;
+        grid-template-columns: 232px minmax(0, 1fr);
+    }
+
+    .adm-side {
+        height: calc(100vh - var(--adm-top));
+        overflow-y: auto;
+        scrollbar-width: none;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        padding: 24px 12px 20px;
+        border-bottom: none;
+        border-right: 1px solid var(--adm-line);
+        gap: 28px;
+        background: var(--adm-bg);
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+
+    .adm-side .adm-brand {
+        display: flex;
+        padding: 0 10px;
+    }
+
+    .adm-nav {
+        flex-direction: column;
+        overflow: visible;
+        margin: 0;
+        padding: 0;
+        gap: 2px;
+        -webkit-mask-image: none;
+        mask-image: none;
+    }
+
+    .adm-nav-item {
+        width: 100%;
+        border-color: transparent;
+        padding: 9px 10px;
+    }
+
+    .adm-nav-item.is-active {
+        color: var(--adm-text);
+    }
+
+    .adm-nav-active {
+        inset: 0;
+        background: var(--adm-raise);
+        box-shadow: inset 0 0 0 1px var(--adm-line);
+    }
+
+    /* The accent rail rides along with the indicator */
+    .adm-nav-active::before {
+        content: '';
+        position: absolute;
+        left: -12px;
+        top: 8px;
+        bottom: 8px;
+        width: 2px;
+        border-radius: 0 2px 2px 0;
+        background: var(--adm-accent);
+    }
+
+    .adm-nav-label {
+        flex: 1;
+        text-align: left;
+    }
+
+    .adm-nav-key {
+        display: inline-block;
+        font-family: var(--adm-mono);
+        font-size: 0.625rem;
+        line-height: 1;
+        padding: 3px 5px;
+        border: 1px solid var(--adm-line-strong);
+        border-radius: 3px;
+        color: var(--adm-text-3);
+    }
+
+    .adm-side-foot {
+        display: flex;
+        margin-top: auto;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    /* Lock reads as the last row of the sidebar, not a floating button */
+    .adm-lock {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        height: auto;
+        padding: 9px 10px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 500;
+        text-align: left;
+    }
+
+    .adm-lock-label {
+        display: inline;
+    }
+
+    /* ----- users rings ----- */
+
+    .adm-rings {
+        display: block;
+        padding: 20px 10px 0;
+        border-top: 1px solid var(--adm-line);
+    }
+
+    .adm-rings-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        width: 100%;
+        padding: 0;
+        border: none;
+        background: none;
+        cursor: pointer;
+        touch-action: manipulation;
+    }
+
+    .adm-rings-total {
+        font-family: var(--adm-mono);
+        font-size: 0.6875rem;
+        color: var(--adm-text-2);
+    }
+
+    /* Ring centred, legend underneath at full width so the values line up on the right */
+    .adm-rings-body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        margin-top: 16px;
+    }
+
+    .adm-rings-legend {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        width: 100%;
+    }
+
+    .adm-rings-legend div {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .adm-rings-legend dt {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--adm-mono);
+        font-size: 0.6875rem;
+        color: var(--adm-text-2);
+        white-space: nowrap;
+    }
+
+    .adm-rings-legend .adm-swatch {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+
+    .adm-rings-legend dd {
+        font-family: var(--adm-mono);
+        font-size: 0.75rem;
+        font-variant-numeric: tabular-nums;
+        color: var(--adm-text);
+    }
+
+    .adm-rings-body svg {
+        width: 104px;
+        height: 104px;
+    }
+
+    /* ----- this week rail ----- */
+
+    .adm-week {
+        display: block;
+        padding: 16px 10px;
+        border-top: 1px solid var(--adm-line);
+        border-bottom: 1px solid var(--adm-line);
+    }
+
+    .adm-week-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        width: 100%;
+        padding: 0;
+        border: none;
+        background: none;
+        cursor: pointer;
+        touch-action: manipulation;
+    }
+
+    .adm-week-total {
+        font-family: var(--adm-mono);
+        font-size: 0.6875rem;
+        color: var(--adm-text-2);
+    }
+
+    .adm-week-days {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+        margin-top: 14px;
+        list-style: none;
+    }
+
+    .adm-week-day {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Each day sits on the rail line; bars grow up from it */
+    .adm-week-slot {
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        width: 100%;
+        height: 40px;
+        border-bottom: 1px solid var(--adm-line-strong);
+    }
+
+    .adm-week-bar {
+        width: 8px;
+        height: 2px;
+        border-radius: 3px 3px 0 0;
+        background: var(--adm-text-3);
+    }
+
+    .adm-week-day.is-today .adm-week-bar {
+        background: var(--adm-accent);
+    }
+
+    .adm-week-day.is-future .adm-week-slot {
+        border-bottom-style: dotted;
+    }
+
+    .adm-week-letter {
+        font-family: var(--adm-mono);
+        font-size: 0.6875rem;
+        line-height: 1;
+        color: var(--adm-text-3);
+    }
+
+    .adm-week-day.is-today .adm-week-letter {
+        color: var(--adm-text);
+        font-weight: 600;
+    }
+
+    .adm-week-day.is-future .adm-week-letter {
+        opacity: 0.5;
+    }
+
+    /* "You are here" under today; a filled dot on the day attendance was posted */
+    .adm-week-mark {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+    }
+
+    .adm-week-day.is-today .adm-week-mark {
+        background: var(--adm-text-3);
+    }
+
+    .adm-week-mark.is-posted,
+    .adm-week-day.is-today .adm-week-mark.is-posted {
+        background: var(--adm-accent);
+        box-shadow: 0 0 0 2px var(--adm-bg), 0 0 0 3px var(--adm-accent);
+    }
+
+    .adm-week-note {
+        margin-top: 12px;
+        font-size: 0.75rem;
+        color: var(--adm-text-2);
+    }
+
+    .adm-main {
+        padding: 36px 40px 80px;
+    }
+
+    .adm-main > * {
+        max-width: 1120px;
+    }
+}
+
+/* ---------- layout ---------- */
+
+.adm-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    animation: adm-enter 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.adm-split {
+    display: grid;
+    gap: 28px;
+}
+
+@media (min-width: 1000px) {
+    .adm-split {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.adm-toolbar {
     display: flex;
     flex-wrap: wrap;
-    gap: 24px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+/* A toolbar whose height never changes with its contents (its row must not push the page) */
+.adm-toolbar-fixed {
+    flex-wrap: nowrap;
+    min-height: 36px;
+}
+
+.adm-toolbar-end {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+/* Counting numbers use fixed-width digits so they don't wobble as they change */
+.adm-count {
+    font-variant-numeric: tabular-nums;
+}
+
+.adm-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.adm-panel {
+    border-top: 1px solid var(--adm-line-strong);
+    padding-top: 14px;
+    min-width: 0;
+}
+
+.adm-panel-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.adm-scroll {
+    overflow-x: auto;
+}
+
+.adm-center {
+    align-self: center;
+}
+
+/* ---------- controls ---------- */
+
+.adm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.adm-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.adm-btn-primary {
+    background: var(--adm-accent-fill);
+    color: var(--adm-accent-ink);
+    font-weight: 600;
+}
+
+.adm-btn-quiet {
+    background: none;
+    border-color: var(--adm-line-strong);
+    color: var(--adm-text-2);
+}
+
+.adm-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--adm-text-2);
+    font-size: 0.8125rem;
+    cursor: pointer;
+}
+
+.adm-icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 4px;
+    background: none;
+    color: var(--adm-text-2);
+    cursor: pointer;
+}
+
+.adm-segmented {
+    display: inline-flex;
+    flex-wrap: wrap;
+    padding: 2px;
+    border: 1px solid var(--adm-line-strong);
+    border-radius: 7px;
+    background: var(--adm-panel);
+}
+
+.adm-segmented button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 5px;
+    background: none;
+    color: var(--adm-text-2);
+    font-family: var(--adm-mono);
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.adm-segmented button {
+    position: relative;
+    isolation: isolate;
+}
+
+.adm-segmented button.is-active {
+    color: var(--adm-accent-ink);
+    font-weight: 600;
+}
+
+.adm-seg-thumb {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: 5px;
+    background: var(--adm-accent-fill);
+}
+
+.adm-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.adm-field label {
+    font-family: var(--adm-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--adm-text-3);
+}
+
+.adm input {
+    min-width: 0;
+    background: var(--adm-panel);
+    border: 1px solid var(--adm-line-strong);
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-family: var(--adm-mono);
+    font-size: 1rem; /* 16px or more stops iOS zooming into the field */
+    color: var(--adm-text);
+}
+
+.adm input::placeholder {
+    color: var(--adm-text-3);
+}
+
+.adm input:focus-visible {
+    outline: 2px solid var(--adm-accent);
+    outline-offset: 0;
+    border-color: transparent;
+}
+
+.adm-field-inline {
+    flex-direction: row;
     align-items: center;
 }
 
-.student-info-main {
+.adm-field-inline input {
+    width: 6.5em;
+    padding: 6px 10px;
+    text-transform: uppercase;
+}
+
+.adm-lookup-row {
+    display: flex;
+    gap: 8px;
+}
+
+.adm-lookup-row input {
     flex: 1;
 }
 
-.student-info-main h2 {
-    font-size: 1.5rem;
-    color: #fff;
-    margin-bottom: 4px;
+.adm-lookup {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 640px;
 }
 
-.student-info-main p {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
+.adm-lookup input {
+    font-size: 1.375rem;
+    letter-spacing: 0.06em;
+    padding: 12px 14px;
+    text-transform: uppercase;
 }
 
-.student-stats-grid {
+.adm-recent {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    font-size: 0.75rem;
+}
+
+.adm-roll {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: var(--adm-mono);
+    font-size: 0.75rem;
+    color: var(--adm-text);
+    text-decoration: underline dotted var(--adm-text-3);
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.adm-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.adm-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    border: 1px solid var(--adm-line-strong);
+    border-radius: 999px;
+    background: none;
+    font-family: var(--adm-mono);
+    font-size: 0.75rem;
+    color: var(--adm-text-2);
+    cursor: pointer;
+}
+
+.adm-chip span {
+    color: var(--adm-text-3);
+    font-variant-numeric: tabular-nums;
+}
+
+.adm-chip.is-active {
+    border-color: var(--adm-accent);
+    color: var(--adm-text);
+}
+
+/* ---------- states ---------- */
+
+.adm-state {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8125rem;
+    color: var(--adm-text-2);
+}
+
+.adm-state-error {
+    color: var(--adm-critical-text);
+}
+
+.adm-state-error .adm-link {
+    color: var(--adm-text);
+    text-decoration: underline;
+}
+
+.adm-pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--adm-accent);
+    animation: adm-blink 1s ease-in-out infinite;
+}
+
+.adm-spin {
+    animation: adm-spin 0.9s linear infinite;
+}
+
+/* Compact, single line: it sits in the toolbar row and truncates rather than wrapping */
+.adm-alarm {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: 7px 12px;
+    border: 1px solid var(--adm-critical);
+    border-radius: 8px;
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--adm-text);
+    text-align: left;
+    cursor: pointer;
+}
+
+.adm-alarm > svg:first-child {
+    color: var(--adm-critical-text);
+    flex-shrink: 0;
+}
+
+.adm-alarm-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.adm-alarm > svg {
+    flex-shrink: 0;
+}
+
+.adm-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.adm-status.is-good {
+    color: var(--adm-good-text);
+}
+
+.adm-status.is-critical {
+    color: var(--adm-critical-text);
+}
+
+/* ---------- loading: placeholders hold the final layout ---------- */
+
+.adm-skel {
+    display: block;
+    height: 12px;
+    border-radius: 4px;
+    background: var(--adm-raise);
+    animation: adm-skel-pulse 1.4s ease-in-out infinite;
+}
+
+.adm-skel-inline {
+    display: inline-block;
+    height: 0.8em;
+    vertical-align: -0.05em;
+}
+
+.adm-skel-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.adm-skel-plot {
+    height: 168px;
+    border-radius: 6px;
+    opacity: 0.6;
+}
+
+.adm-skel-rows {
+    border-top: 1px solid var(--adm-line);
+}
+
+.adm-skel-row {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--adm-line);
+}
+
+.adm-kpis .adm-skel {
+    margin-top: 3px;
+}
+
+.adm-skel-value {
+    width: 4ch;
+    height: 24px;
+    margin-top: 10px !important;
+}
+
+/* Content that replaces a placeholder fades in once; reloads keep it on screen without a flash */
+.adm-reveal {
+    animation: adm-fade 220ms ease-out;
+}
+
+/* Data marks grow from their baseline the first time they appear */
+.adm-tl-stack,
+.adm-week-bar {
+    transform-origin: bottom;
+    animation: adm-grow-y 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.adm-bars-whole {
+    transform-origin: left;
+    animation: adm-grow-x 560ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes adm-grow-y {
+    from {
+        transform: scaleY(0);
+    }
+}
+
+@keyframes adm-grow-x {
+    from {
+        transform: scaleX(0);
+    }
+}
+
+@keyframes adm-skel-pulse {
+    50% {
+        opacity: 0.45;
+    }
+}
+
+/* ---------- figures ---------- */
+
+.adm-hero {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 16px;
-    width: 100%;
+    gap: 20px;
+    align-items: end;
 }
 
-.admin-stat-card {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--glass-border);
-    border-radius: 16px;
-    padding: 20px;
+.adm-hero-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.adm-hero-value {
+    font-size: clamp(3.5rem, 9vw, 5rem);
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 1;
+}
+
+@media (min-width: 1000px) {
+    .adm-hero {
+        grid-template-columns: minmax(240px, 1fr) minmax(0, 2fr);
+    }
+}
+
+.adm-kpis {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--adm-line);
+    border-top: 1px solid var(--adm-line);
+    border-bottom: 1px solid var(--adm-line);
+}
+
+.adm-kpis > div:last-child:nth-child(odd) {
+    grid-column: span 2;
+}
+
+@media (min-width: 600px) {
+    .adm-kpis {
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    }
+
+    .adm-kpis > div:last-child:nth-child(odd) {
+        grid-column: auto;
+    }
+}
+
+.adm-kpis > div {
+    background: var(--adm-bg);
+    padding: 12px 14px 14px;
+    min-width: 0;
+}
+
+.adm-kpis dt {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--adm-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--adm-text-3);
+}
+
+.adm-kpis dd {
+    margin-top: 4px;
+    font-size: 1.625rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+
+.adm-kpis dd small {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--adm-text-3);
+    letter-spacing: 0;
+}
+
+.adm-student {
+    display: grid;
+    gap: 16px;
+}
+
+.adm-student-name {
+    font-size: 1.75rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+}
+
+@media (min-width: 1000px) {
+    .adm-student {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+        align-items: end;
+    }
+}
+
+/* ---------- charts ---------- */
+
+.adm-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.adm-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    list-style: none;
+    margin-bottom: 14px;
+    font-family: var(--adm-mono);
+    font-size: 0.6875rem;
+    color: var(--adm-text-2);
+}
+
+.adm-legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.adm-timeline {
+    margin: 0;
+}
+
+.adm-tl-plot {
+    position: relative;
+    height: 168px;
+    padding-top: 18px;
+    border-bottom: 1px solid var(--adm-line-strong);
+}
+
+.adm-tl-plot::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 18px;
+    border-top: 1px solid var(--adm-line);
+}
+
+.adm-tl-max {
+    position: absolute;
+    top: 0;
+    left: 0;
+    font-family: var(--adm-mono);
+    font-size: 0.625rem;
+    color: var(--adm-text-3);
+}
+
+.adm-tl-cols {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    height: 100%;
+}
+
+.adm-tl-col {
+    position: relative;
+    flex: 1 1 0;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    border-radius: 3px 3px 0 0;
+}
+
+.adm-tl-stack {
+    width: min(24px, calc(100% - 2px));
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 2px;
+}
+
+.adm-tl-stack span {
+    display: block;
+    min-height: 2px;
+}
+
+.adm-tl-stack span:last-child {
+    border-radius: 4px 4px 0 0;
+}
+
+.adm-tip {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    border: 1px solid var(--adm-line-strong);
+    border-radius: 6px;
+    background: var(--adm-raise);
+    font-family: var(--adm-mono);
+    font-size: 0.6875rem;
+    color: var(--adm-text-2);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 100ms ease;
+}
+
+.adm-tl-col.is-start .adm-tip {
+    left: 0;
+    transform: none;
+}
+
+.adm-tl-col.is-end .adm-tip {
+    left: auto;
+    right: 0;
+    transform: none;
+}
+
+.adm-tip strong {
+    color: var(--adm-text);
+    font-weight: 600;
+}
+
+.adm-tip span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.adm-tip b {
+    margin-left: auto;
+    padding-left: 12px;
+    color: var(--adm-text);
+    font-weight: 600;
+}
+
+.adm-tip .adm-swatch {
+    width: 8px;
+    height: 8px;
+}
+
+.adm-tl-col:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.adm-tl-col:focus-visible {
+    outline: 2px solid var(--adm-accent);
+    outline-offset: 0;
+}
+
+/* :focus, not only :focus-visible, so a tap on a phone opens the tooltip too */
+.adm-tl-col:focus .adm-tip {
+    opacity: 1;
+}
+
+.adm-tl-axis {
+    display: flex;
+    margin-top: 6px;
+    font-family: var(--adm-mono);
+    font-size: 0.625rem;
+    color: var(--adm-text-3);
+}
+
+.adm-tl-axis span {
+    flex: 1 1 0;
+    white-space: nowrap;
+    overflow: visible;
+    width: 0;
+}
+
+.adm-barlist .adm-legend {
+    margin-bottom: 10px;
+}
+
+.adm-bars {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.adm-bars th,
+.adm-bars td {
+    padding: 5px 0;
+    vertical-align: middle;
+}
+
+.adm-bars th {
+    width: 1%;
+    padding-right: 12px;
+    font-family: var(--adm-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.adm-bars td.adm-num {
+    width: 1%;
+    padding-left: 12px;
+    text-align: right;
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+.adm-bars-whole {
+    display: block;
+    height: 12px;
+    min-width: 2px;
+    border-radius: 0 4px 4px 0;
+    background: var(--adm-track);
+    overflow: hidden;
+}
+
+.adm-bars-part {
+    display: block;
+    height: 100%;
+    border-radius: 0 4px 4px 0;
+    background: var(--adm-s1);
+}
+
+.adm-meter {
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+    width: 64px;
+    height: 6px;
+    margin-left: 10px;
+    border-radius: 3px;
+    background: var(--adm-line-strong);
+}
+
+.adm-meter-fill {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+}
+
+.adm-meter-fill.is-good {
+    background: var(--adm-good);
+}
+
+.adm-meter-fill.is-warning {
+    background: var(--adm-warning);
+}
+
+.adm-meter-fill.is-critical {
+    background: var(--adm-critical);
+}
+
+.adm-meter-mark {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    width: 1px;
+    background: var(--adm-bg);
+}
+
+/* When attendance lands: week rows, Mon–Sun track, one dot per week */
+.adm-landing {
+    margin: 0;
+}
+
+.adm-landing-summary {
+    margin-bottom: 16px;
+    font-size: 0.9375rem;
+}
+
+.adm-landing-summary strong {
+    font-family: var(--adm-mono);
+    font-weight: 600;
+}
+
+.adm-landing-grid {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    align-items: center;
+    row-gap: 2px;
+    max-width: 720px;
+}
+
+.adm-landing-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding-bottom: 6px;
+    font-family: var(--adm-mono);
+    font-size: 0.6875rem;
+    color: var(--adm-text-3);
+}
+
+.adm-landing-days span {
+    padding-left: 4px;
+}
+
+.adm-landing-week {
+    font-family: var(--adm-mono);
+    font-size: 0.6875rem;
+    color: var(--adm-text-3);
+    white-space: nowrap;
+}
+
+/* Day columns drawn as hairlines; the dot sits on the row's centre line */
+.adm-landing-track {
+    position: relative;
+    height: 22px;
+    background:
+        linear-gradient(var(--adm-line), var(--adm-line)) 0 50% / 100% 1px no-repeat,
+        repeating-linear-gradient(to right, var(--adm-line-strong) 0 1px, transparent 1px calc(100% / 7));
+}
+
+.adm-landing-dot {
+    position: absolute;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 -5px;
+    border-radius: 50%;
+    background: var(--adm-ring-2);
+    box-shadow: 0 0 0 2px var(--adm-bg);
+}
+
+.adm-landing-dot.is-latest {
+    background: var(--adm-accent);
+    box-shadow: 0 0 0 2px var(--adm-bg), 0 0 0 3px var(--adm-accent);
+}
+
+/* SGPA / CGPA trend */
+.adm-trend {
+    margin: 24px 0 20px;
+    max-width: 720px;
+}
+
+.adm-trend-plot {
+    position: relative;
+    height: 168px;
+    margin: 12px 0 0 28px;
+}
+
+.adm-trend-grid {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-top: 1px solid var(--adm-line);
+}
+
+.adm-trend-grid span {
+    position: absolute;
+    left: -28px;
+    top: -0.55em;
+    font-family: var(--adm-mono);
+    font-size: 0.625rem;
+    color: var(--adm-text-3);
+}
+
+.adm-trend-lines {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.adm-trend-dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    margin: 0 0 -5px -5px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px var(--adm-bg);
+}
+
+.adm-trend-axis {
+    display: flex;
+    margin: 8px 0 0 28px;
+    font-family: var(--adm-mono);
+    font-size: 0.6875rem;
+    color: var(--adm-text-3);
+}
+
+.adm-trend-axis span {
+    flex: 1 1 0;
     text-align: center;
 }
 
-.admin-stat-label {
-    font-size: 0.75rem;
+/* Dot tooltips (both charts): show on hover, keyboard focus or tap */
+.adm-landing-dot .adm-tip,
+.adm-trend-dot .adm-tip {
+    bottom: calc(100% + 8px);
+}
+
+.adm-landing-dot.is-start .adm-tip,
+.adm-trend-dot.is-start .adm-tip {
+    left: 0;
+    transform: none;
+}
+
+.adm-landing-dot.is-end .adm-tip,
+.adm-trend-dot.is-end .adm-tip {
+    left: auto;
+    right: 0;
+    transform: none;
+}
+
+.adm-landing-dot:focus,
+.adm-trend-dot:focus {
+    outline: none;
+}
+
+.adm-landing-dot:focus-visible,
+.adm-trend-dot:focus-visible {
+    outline: 2px solid var(--adm-accent);
+    outline-offset: 2px;
+}
+
+.adm-landing-dot:focus .adm-tip,
+.adm-trend-dot:focus .adm-tip {
+    opacity: 1;
+}
+
+.adm-landing-dot,
+.adm-trend-dot {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------- tables, lists ---------- */
+
+.adm-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+}
+
+.adm-table th,
+.adm-table td {
+    padding: 10px 0 10px 16px;
+    border-bottom: 1px solid var(--adm-line);
+    text-align: right;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.adm-table th:first-child {
+    padding-left: 0;
+    text-align: left;
+    white-space: normal;
+}
+
+.adm-table thead th {
+    font-family: var(--adm-mono);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--text-tertiary);
-    margin-bottom: 8px;
-    letter-spacing: 1px;
+    color: var(--adm-text-3);
+    border-bottom-color: var(--adm-line-strong);
 }
 
-.admin-stat-value {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--text-primary);
+.adm-table thead th .adm-swatch {
+    margin-right: 6px;
+    vertical-align: -1px;
 }
 
-.admin-stat-value.large {
-    font-size: 2rem;
+.adm-table tbody th {
+    font-weight: 500;
 }
 
-.data-preview-tabs {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 24px;
-    background: rgba(0, 0, 0, 0.2);
-    padding: 4px;
-    border-radius: 12px;
+.adm-matrix {
+    max-width: 760px;
 }
 
-.tab-btn {
-    flex: 1;
-    padding: 10px;
-    border-radius: 8px;
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
+/* Sequential tint (one hue, stronger = more); the number stays in text colour */
+.adm-matrix td[style] {
+    background: rgb(59 130 246 / var(--heat));
 }
 
-.tab-btn.active {
-    background: var(--primary);
-    color: white;
+.adm-table th.adm-nowrap {
+    white-space: nowrap;
 }
 
-.admin-logout-btn {
-    margin-top: 20px;
-    background: transparent;
-    border: 1px solid var(--glass-border);
-    color: var(--text-secondary);
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
+.adm-zero {
+    color: var(--adm-text-3);
+}
+
+.adm-course {
+    display: block;
+    margin-top: 2px;
+    max-width: 320px;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--adm-text-2);
+}
+
+.adm-att td:last-child {
+    text-align: left;
+    padding-left: 20px;
+}
+
+.adm-att thead th:last-child {
+    text-align: left;
+    padding-left: 20px;
+}
+
+.adm-tag {
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
-    margin: 20px auto 0;
+    gap: 6px;
+    padding: 2px 7px;
+    border: 1px solid var(--adm-line-strong);
+    border-radius: 4px;
+    font-family: var(--adm-mono);
+    font-size: 0.6562rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--adm-text-2);
 }
 
-.admin-logout-btn:hover {
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--danger);
-    border-color: rgba(239, 68, 68, 0.3);
+.adm-tag.is-0::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--adm-critical);
 }
 
-/* Internals Admin Styles */
-.internal-mark-card {
+.adm-notes,
+.adm-inbox,
+.adm-log {
+    list-style: none;
+}
+
+.adm-notes li {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--adm-line);
+}
+
+.adm-notes li:first-child {
+    padding-top: 0;
+}
+
+.adm-note-meta,
+.adm-inbox-meta,
+.adm-inbox-from {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    font-size: 0.75rem;
+}
+
+.adm-note-meta {
+    margin-bottom: 6px;
+}
+
+.adm-clamp {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    color: var(--adm-text-2);
+    overflow-wrap: anywhere;
+}
+
+.adm-inbox {
+    border-top: 1px solid var(--adm-line-strong);
+}
+
+.adm-inbox li {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    gap: 8px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--adm-line);
 }
 
-.admin-internal-split {
+.adm-inbox-meta time {
+    margin-left: auto;
+    font-family: var(--adm-mono);
+    color: var(--adm-text-3);
+}
+
+.adm-inbox-message {
+    max-width: 70ch;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.adm-log li {
     display: flex;
-    justify-content: space-around;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 14px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--adm-line);
+    font-size: 0.8125rem;
+}
+
+.adm-log li:first-child {
+    padding-top: 0;
+}
+
+.adm-log-time {
+    width: 64px;
+    flex-shrink: 0;
+    font-family: var(--adm-mono);
+    font-size: 0.75rem;
+    color: var(--adm-text-3);
+}
+
+.adm-log-what {
+    display: inline-flex;
     align-items: center;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    gap: 6px;
+    font-weight: 500;
 }
 
-.split-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+.adm-log-source {
+    font-family: var(--adm-mono);
+    font-size: 0.75rem;
+    color: var(--adm-text-2);
 }
 
-.split-label {
-    font-size: 0.65rem;
-    color: var(--text-tertiary);
-    margin-bottom: 2px;
+.adm-log-detail,
+.adm-log-backend {
+    font-family: var(--adm-mono);
+    font-size: 0.75rem;
+    color: var(--adm-text-3);
+    overflow-wrap: anywhere;
 }
 
-.split-value {
-    font-size: 1.1rem;
-    font-weight: 700;
-}
-
-.split-item.highlight .split-value {
-    color: var(--primary);
-}
-
-@media (max-width: 600px) {
-    .admin-page-wrapper {
-        padding: 10px 8px;
+@media (min-width: 900px) {
+    .adm-log-full li {
+        flex-wrap: nowrap;
     }
 
-    .admin-header-section h1 {
-        font-size: 1.75rem;
+    .adm-log-full .adm-log-what {
+        width: 150px;
+        flex-shrink: 0;
     }
-    
-    .admin-main-card {
-        padding: 24px 16px;
+
+    .adm-log-full .adm-log-source {
+        width: 104px;
+        flex-shrink: 0;
+    }
+
+    .adm-log-full .adm-roll {
+        width: 72px;
+        flex-shrink: 0;
+        text-align: left;
+    }
+
+    .adm-log-backend {
+        margin-left: auto;
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 599px) {
+    .adm-hide-sm {
+        display: none;
+    }
+
+    .adm-meter {
+        display: block;
+        margin: 6px 0 0 auto;
+    }
+}
+
+/* ---------- sidebar on shorter windows ---------- */
+
+/* Most laptop browsers are under 900px tall: put the legend beside a smaller ring */
+@media (min-width: 900px) and (max-height: 899px) {
+    .adm-side {
+        gap: 20px;
+    }
+
+    .adm-rings {
+        padding-top: 16px;
+    }
+
+    .adm-rings-body {
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .adm-rings-body svg {
+        flex-shrink: 0;
+        width: 72px;
+        height: 72px;
+    }
+
+    .adm-rings-legend {
+        min-width: 0;
+        gap: 4px;
+    }
+
+    .adm-rings-legend div {
+        gap: 4px;
+    }
+
+    .adm-rings-legend dt {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.625rem;
+    }
+
+    .adm-rings-legend dd {
+        font-size: 0.6875rem;
+    }
+
+    .adm-week {
+        padding-block: 14px;
+    }
+}
+
+/* Very short windows: keep navigation, the week rail and Lock; drop the rings */
+@media (min-width: 900px) and (max-height: 699px) {
+    .adm-rings {
+        display: none;
+    }
+}
+
+/* ---------- press (responds on pointer-down) ---------- */
+
+.adm-btn,
+.adm-chip,
+.adm-nav-item,
+.adm-segmented button,
+.adm-roll,
+.adm-link,
+.adm-icon-btn,
+.adm-alarm,
+.adm-tl-col {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.adm-btn,
+.adm-chip,
+.adm-segmented button,
+.adm-icon-btn,
+.adm-alarm {
+    transition-property: color, background-color, border-color, transform;
+    transition-duration: 120ms, 120ms, 120ms, 100ms;
+    transition-timing-function: ease-out;
+}
+
+.adm-btn:not(:disabled):active,
+.adm-chip:active,
+.adm-nav-item:active,
+.adm-segmented button:active,
+.adm-icon-btn:active,
+.adm-lock:active {
+    transform: scale(0.97);
+}
+
+.adm-alarm:active {
+    transform: scale(0.99);
+}
+
+.adm-roll:active,
+.adm-link:active {
+    opacity: 0.6;
+}
+
+/* ---------- higher contrast ---------- */
+
+@media (prefers-contrast: more) {
+    .adm {
+        --adm-line: #3a3a3a;
+        --adm-line-strong: #565656;
+        --adm-text-2: #cbd5e1;
+        --adm-text-3: #94a3b8;
+    }
+}
+
+/* ---------- hover (pointer devices only) ---------- */
+
+@media (hover: hover) and (pointer: fine) {
+    .adm-lock:hover {
+        color: var(--adm-text);
+        background: var(--adm-raise);
+    }
+
+    .adm-week-head:hover .adm-week-total,
+    .adm-rings-head:hover .adm-rings-total {
+        color: var(--adm-text);
+    }
+
+    .adm-nav-item:not(.is-active):hover {
+        color: var(--adm-text);
+        background: var(--adm-raise);
+    }
+
+    .adm-btn-primary:not(:disabled):hover {
+        background: #1d4ed8; /* darker on hover keeps white text above 4.5:1 */
+    }
+
+    .adm-btn-quiet:not(:disabled):hover,
+    .adm-chip:hover {
+        color: var(--adm-text);
+        border-color: var(--adm-text-3);
+    }
+
+    .adm-link:hover,
+    .adm-icon-btn:hover {
+        color: var(--adm-text);
+    }
+
+    .adm-roll:hover {
+        color: var(--adm-accent);
+        text-decoration-color: var(--adm-accent);
+    }
+
+    .adm-alarm:hover {
+        background: rgba(239, 68, 68, 0.16);
+    }
+
+    .adm-segmented button:not(.is-active):hover {
+        color: var(--adm-text);
+    }
+
+    .adm-tl-col:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .adm-tl-col:hover .adm-tip,
+    .adm-landing-dot:hover .adm-tip,
+    .adm-trend-dot:hover .adm-tip {
+        opacity: 1;
+    }
+}
+
+/* ---------- motion ---------- */
+
+/* Content enters from the side the nav moved towards: along the sidebar (y) on wide screens,
+   along the pill bar (x) on phones. --adm-dir (+1 / -1) is set on .adm-main by Admin.jsx. */
+.adm-main {
+    --adm-dir-x: var(--adm-dir, 1);
+    --adm-dir-y: 0;
+}
+
+@media (min-width: 900px) {
+    .adm-main {
+        --adm-dir-x: 0;
+        --adm-dir-y: var(--adm-dir, 1);
+    }
+}
+
+.adm-head {
+    animation: adm-enter 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes adm-enter {
+    from {
+        opacity: 0;
+        transform: translate(calc(var(--adm-dir-x) * 12px), calc(var(--adm-dir-y) * 8px));
+    }
+}
+
+@keyframes adm-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes adm-blink {
+    50% {
+        opacity: 0.3;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .adm-stack,
+    .adm-head {
+        animation-name: adm-fade;
+    }
+
+    .adm-spin,
+    .adm-pulse,
+    .adm-skel,
+    .adm-tl-stack,
+    .adm-week-bar,
+    .adm-bars-whole {
+        animation: none;
+    }
+
+    .adm *,
+    .adm *::before {
+        transition-duration: 0ms !important;
+    }
+}
+
+@keyframes adm-fade {
+    from {
+        opacity: 0;
     }
 }

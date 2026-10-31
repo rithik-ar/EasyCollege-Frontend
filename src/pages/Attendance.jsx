@@ -2,9 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Info, Plus, Minus, Wand2, Save, CloudOff, RefreshCw, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { simulateCourse, updateSimulation, resetSimulation, canSimulate, formatBunks, formatPercent } from '../utils/attendanceSimulation';
+import { useNavigate } from 'react-router-dom';
+import { signInAgain } from '../utils/session';
 import './Attendance.css';
 
 function Attendance() {
+    const navigate = useNavigate();
     const [attendanceData, setAttendanceData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
@@ -25,6 +28,7 @@ function Attendance() {
                 body: JSON.stringify({ auth_token: authToken, force_refresh: forceRefresh })
             });
             const data = await response.json();
+            if (response.status === 401) return signInAgain(navigate, data.error);
             if (response.ok) {
                 setAttendanceData(data);
             } else {
@@ -36,7 +40,7 @@ function Attendance() {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [navigate]);
 
     useEffect(() => {
         fetchAttendance(false);

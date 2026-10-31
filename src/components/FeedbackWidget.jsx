@@ -21,7 +21,7 @@ function FeedbackWidget() {
         setIsSubmittingFeedback(true);
         try {
             const authToken = localStorage.getItem('auth_token');
-            const SERVER_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
+            const SERVER_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5050';
             const res = await fetch(`${SERVER_URL}/api/submit-feedback`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

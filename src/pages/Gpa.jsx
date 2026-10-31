@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Modal from '../components/Modal';
 import { RefreshCw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { signInAgain } from '../utils/session';
 import './Gpa.css';
 
 function Gpa() {
+    const navigate = useNavigate();
     const [gpaData, setGpaData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
@@ -36,6 +39,7 @@ function Gpa() {
                 body: JSON.stringify({ auth_token: authToken, force_refresh: forceRefresh })
             });
             const data = await response.json();
+            if (response.status === 401) return signInAgain(navigate, data.error);
             if (response.ok) {
                 setGpaData(data);
                 setCalculatedGpa(data.gpa);
@@ -49,7 +53,7 @@ function Gpa() {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [navigate]);
 
     useEffect(() => {
         fetchGpa(false);

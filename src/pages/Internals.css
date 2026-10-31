@@ -115,6 +115,8 @@
     padding: 0.15rem 0.5rem;
     border-radius: 4px;
     display: flex;
+    /* Was applied by Admin.css (global once bundled) before the admin redesign; kept so this page looks the same */
+    flex-direction: column;
     gap: 0.3rem;
     align-items: baseline;
 }
@@ -123,6 +125,7 @@
     color: #64748b;
     font-weight: 600;
     font-size: 0.65rem;
+    margin-bottom: 2px;
 }
 
 .split-val {

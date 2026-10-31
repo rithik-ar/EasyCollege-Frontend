@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { signInAgain } from '../utils/session';
 import { BarChart3, Calculator, MessageSquare, GraduationCap, BookOpen, Clock, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -22,6 +23,7 @@ const parseName = (raw) => {
 };
 
 function Dashboard() {
+    const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem('user'));
     const userName = parseName(user);
 
@@ -108,7 +110,7 @@ function Dashboard() {
         const fetchDashboardData = async () => {
             const authToken = localStorage.getItem('auth_token');
             if (!authToken) { setLoading(false); return; }
-            const SERVER_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
+            const SERVER_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5050';
             try {
                 const [timetableRes, attendanceRes] = await Promise.all([
                     fetch(`${SERVER_URL}/api/timetable`, {
@@ -122,6 +124,13 @@ function Dashboard() {
                         body: JSON.stringify({ auth_token: authToken })
                     })
                 ]);
+                // Both requests run in parallel (no delay to the bunk counts); a 401 from either means
+                // eCampus rejected the saved password, so sign out instead of trying again
+                const rejected = [timetableRes, attendanceRes].find(res => res.status === 401);
+                if (rejected) {
+                    const body = await rejected.json().catch(() => ({}));
+                    return signInAgain(navigate, body.error);
+                }
                 const timetableData = await timetableRes.json();
                 const attendanceData = attendanceRes.ok ? await attendanceRes.json() : null;
                 if (timetableRes.ok && timetableData.schedule) {
@@ -134,7 +143,7 @@ function Dashboard() {
             }
         };
         fetchDashboardData();
-    }, []);
+    }, [navigate]);
 
     const container = {
         hidden: { opacity: 0 },

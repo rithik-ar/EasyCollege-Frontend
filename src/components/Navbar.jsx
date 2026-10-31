@@ -9,7 +9,7 @@ function Navbar() {
     const storedUser = localStorage.getItem('user');
     const isLoggedIn = !!storedUser;
 
-    const SERVER_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
+    const SERVER_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5050';
     const [isFastMode, setIsFastMode] = useState(localStorage.getItem('fastMode') === 'true');
     const [isSyncingFastMode, setIsSyncingFastMode] = useState(false);
     const [showTooltip, setShowTooltip] = useState(false);

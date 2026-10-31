@@ -4,11 +4,14 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 import Modal from '../components/Modal';
 import { RefreshCw, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { signInAgain } from '../utils/session';
 import './Cgpa.css';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 function Cgpa() {
+    const navigate = useNavigate();
     const [cgpaData, setCgpaData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
@@ -97,6 +100,7 @@ function Cgpa() {
                 body: JSON.stringify({ auth_token: authToken, force_refresh: forceRefresh })
             });
             const data = await response.json();
+            if (response.status === 401) return signInAgain(navigate, data.error);
             if (response.ok) {
                 setCgpaData(data);
                 recalculate(data, new Set());
@@ -109,7 +113,7 @@ function Cgpa() {
         } finally {
             setIsLoading(false);
         }
-    }, [recalculate]);
+    }, [recalculate, navigate]);
 
     useEffect(() => {
         fetchCgpa(false);

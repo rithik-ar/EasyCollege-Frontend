@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 
 // Layout and Authentication
 import Navbar from './components/Navbar';
@@ -20,10 +20,16 @@ import Internals from './pages/Internals';
 import AimlDashboard from './pages/AimlDashboard';
 import NotFound from './pages/NotFound';
 
+// The admin console has its own chrome; the student navbar (and its Fast Mode sync) never mounts there
+function SiteNavbar() {
+    const { pathname } = useLocation();
+    return pathname.startsWith('/admin') ? null : <Navbar />;
+}
+
 function App() {
     return (
         <Router>
-            <Navbar />
+            <SiteNavbar />
             <GoogleAnalyticsTracker />
 
             <main className="container">

@@ -2,9 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, RefreshCw, AlertCircle, CheckCircle2, Wand2, ArrowLeft, Save, TrendingUp } from 'lucide-react';
 import { SIMULATOR_TABLE_IDS, analyzeComponents, calculateTotal, calculateNeededForNext } from '../utils/internalsSimulation';
+import { useNavigate } from 'react-router-dom';
+import { signInAgain } from '../utils/session';
 import './Internals.css';
 
 function Internals() {
+    const navigate = useNavigate();
     const [internalsData, setInternalsData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
@@ -23,6 +26,7 @@ function Internals() {
                 body: JSON.stringify({ auth_token: authToken, force_refresh: forceRefresh })
             });
             const data = await response.json();
+            if (response.status === 401) return signInAgain(navigate, data.error);
             if (response.ok) {
                 setInternalsData(data);
 
@@ -42,7 +46,7 @@ function Internals() {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [navigate]);
 
     const handleSimChange = (courseCode, component, value) => {
         setSimData(prev => ({
