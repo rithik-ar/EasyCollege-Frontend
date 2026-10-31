@@ -11,6 +11,7 @@ function Attendance() {
     const [attendanceData, setAttendanceData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [isPaused, setIsPaused] = useState(false); // eCampus withholds attendance (backend code 'attendance_paused')
     const [showPopup, setShowPopup] = useState(true);
     const [viewMode, setViewMode] = useState('table'); // 'cards' or 'table'
     const reduceMotion = useReducedMotion();
@@ -21,6 +22,7 @@ function Attendance() {
         const authToken = localStorage.getItem('auth_token');
         const apiUrl = import.meta.env.VITE_API_BASE_URL || '';
         setError('');
+        setIsPaused(false);
         try {
             const response = await fetch(`${apiUrl}/api/attendance`, {
                 method: 'POST',
@@ -32,6 +34,7 @@ function Attendance() {
             if (response.ok) {
                 setAttendanceData(data);
             } else {
+                setIsPaused(data.code === 'attendance_paused');
                 setError(data.error || 'Failed to fetch data.');
             }
         } catch (err) {
@@ -147,6 +150,26 @@ function Attendance() {
             </div>
         </div>
     );
+
+    if (isPaused) {
+        return (
+            <div className="attendance-sync-wrapper">
+                <motion.div
+                    className="attendance-sync-card"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                >
+                    <h2 className="sync-title">Attendance paused</h2>
+                    <p className="sync-description">{error}</p>
+
+                    <button className="sync-retry-btn" onClick={() => fetchAttendance(true)}>
+                        Refresh Status
+                    </button>
+                </motion.div>
+            </div>
+        );
+    }
 
     if (error === 'Attendance data is currently unavailable.') {
         return (
