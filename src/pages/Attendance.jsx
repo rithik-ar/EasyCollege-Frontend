@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Info, Plus, Minus, Wand2, Save, CloudOff, RefreshCw, RotateCcw } from 'lucide-react';
+import { Info, Plus, Minus, Wand2, Save, CloudOff, RotateCcw } from 'lucide-react';
+import RefreshIcon from '../components/RefreshIcon';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { simulateCourse, updateSimulation, resetSimulation, canSimulate, formatBunks, formatPercent } from '../utils/attendanceSimulation';
 import { useNavigate } from 'react-router-dom';
 import { signInAgain } from '../utils/session';
+import { friendlyError } from '../utils/friendlyError';
 import './Attendance.css';
 
 function Attendance() {
@@ -69,6 +71,15 @@ function Attendance() {
     };
 
     const simulatedData = attendanceData.map(course => simulateCourse(course, simulation[course.course_code]));
+    const hasData = attendanceData.length > 0;
+
+    // A failed refresh leaves the last numbers on screen, so the message says so briefly and then gets out of the way.
+    // The paused card shows this text as its own content, so it stays there.
+    useEffect(() => {
+        if (!error || !hasData || isPaused) return undefined;
+        const timer = setTimeout(() => setError(''), 6000);
+        return () => clearTimeout(timer);
+    }, [error, hasData, isPaused]);
 
     const renderStepper = (course, type, label, value) => (
         <div role="group" aria-label={`${label} classes for ${course.course_code}`} className="predictor-stepper">
@@ -130,7 +141,7 @@ function Attendance() {
         </div>
     );
 
-    if (isLoading) return (
+    if (isLoading && !hasData) return (
         <div className="attendance-page-wrapper">
             <div className="attendance-main-card">
                 <div className="attendance-header-section">
@@ -171,7 +182,7 @@ function Attendance() {
         );
     }
 
-    if (error === 'Attendance data is currently unavailable.') {
+    if (error === 'Attendance data is currently unavailable.' && !hasData) {
         return (
             <div className="attendance-sync-wrapper">
                 <motion.div
@@ -187,7 +198,7 @@ function Attendance() {
                         Check back later once it is updated
                     </p>
 
-                    <button className="sync-retry-btn" onClick={fetchAttendance}>
+                    <button className="sync-retry-btn" onClick={() => fetchAttendance(true)}>
                         Refresh Status
                     </button>
                 </motion.div>
@@ -195,7 +206,7 @@ function Attendance() {
         );
     }
 
-    if (error) return <div className="error-message">{error}</div>;
+    if (error && !hasData) return <div className="error-message">{friendlyError(error)}</div>;
 
     const commonUpdatedDate = attendanceData.length > 0 ? attendanceData.find(c => c.updated_till)?.updated_till : null;
 
@@ -206,8 +217,8 @@ function Attendance() {
                     <h1>
                         Attendance Tracker
                         <div className="header-actions">
-                            <button onClick={() => fetchAttendance(true)} className="action-icon-btn" title="Force fetch from eCampus" style={{ color: 'var(--text-secondary)' }}>
-                                <RefreshCw size={24} />
+                            <button onClick={() => fetchAttendance(true)} disabled={isLoading} aria-busy={isLoading} className="action-icon-btn" title="Force fetch from eCampus" style={{ color: 'var(--text-secondary)' }}>
+                                <RefreshIcon size={24} spinning={isLoading} />
                             </button>
                             <button onClick={togglePopup} className="info-icon-btn" title="How is this calculated?">
                                 <Info size={24} />
@@ -215,11 +226,15 @@ function Attendance() {
                         </div>
                     </h1>
                     <p>Monitor your class attendance and simulate predicting future percentage changes</p>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginTop: '4px', fontStyle: 'italic' }}>
-                        Data may be cached for speed. Use the reload button to fetch live from eCampus.
-                    </p>
+                    {error ? (
+                        <p className="refresh-error" role="alert" style={{ marginTop: '4px' }}>Couldn't refresh. {friendlyError(error)}</p>
+                    ) : (
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginTop: '4px', fontStyle: 'italic' }}>
+                            Data may be cached for speed. Use the reload button to fetch live from eCampus.
+                        </p>
+                    )}
                     {commonUpdatedDate && (
-                        <div style={{ marginTop: '16px', textAlign: 'center', width: '100%' }}>
+                        <div className="refresh-haze" aria-busy={isLoading} style={{ marginTop: '16px', textAlign: 'center', width: '100%' }}>
                             <div style={{
                                 display: 'inline-block',
                                 margin: '0 auto',
@@ -252,7 +267,7 @@ function Attendance() {
                 </div>
 
                 {viewMode === 'table' && (
-                    <div className="attendance-table-container">
+                    <div className="attendance-table-container refresh-haze" aria-busy={isLoading}>
                         <table className="attendance-modern-table">
                             <thead>
                                 <tr>
@@ -304,7 +319,7 @@ function Attendance() {
                         <h2 className="detailed-view-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             Detailed View <Wand2 size={18} color="var(--primary)" />
                         </h2>
-                        <div className="cards-container">
+                        <div className="cards-container refresh-haze" aria-busy={isLoading}>
                             {simulatedData.map((course, index) => (
                                 <div className={`attendance-card ${course.isSimulated ? 'simulated-card' : ''}`} key={index} style={course.isSimulated ? { borderColor: 'var(--primary)', boxShadow: '0 0 15px rgba(99, 102, 241, 0.2)' } : {}}>
                                     <div className="course-header">

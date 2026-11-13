@@ -13,7 +13,8 @@ export const ACTIVITY_REASONS = [
     { key: 'first_login', label: 'New user' },
     { key: 'fast_mode_on', label: 'Fast Mode on' },
     { key: 'fast_mode_off', label: 'Fast Mode off' },
-    { key: 'feedback_submitted', label: 'Feedback' }
+    { key: 'feedback_submitted', label: 'Feedback' },
+    { key: 'unrecognised_grade', label: 'Unknown grade' }
 ];
 
 export const SOURCE_LABELS = {

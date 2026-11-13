@@ -1,16 +1,24 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Modal from '../components/Modal';
-import { RefreshCw } from 'lucide-react';
+import RefreshIcon from '../components/RefreshIcon';
 import { useNavigate } from 'react-router-dom';
 import { signInAgain } from '../utils/session';
+import { friendlyError } from '../utils/friendlyError';
+import { gradePoints, unrecognisedNotice } from '../utils/grading';
+import { roundHalfUp } from '../utils/cgpaEstimate';
+import RegulationPrompt from '../components/RegulationPrompt';
 import './Gpa.css';
+
+// Exclusions follow the course, so they still mean the same thing if a refresh changes the rows
+const courseKey = (course) => `${course.sem}|${course.course}|${course.title}`;
 
 function Gpa() {
     const navigate = useNavigate();
     const [gpaData, setGpaData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
-    const [excludedIndices, setExcludedIndices] = useState(new Set());
+    const [excludedKeys, setExcludedKeys] = useState(new Set());
+    const excludedRef = useRef(excludedKeys); // the latest selection, for a refresh that answers after a toggle
     const [calculatedGpa, setCalculatedGpa] = useState(null);
     const [calculatedCredits, setCalculatedCredits] = useState(0);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,6 +35,42 @@ function Gpa() {
         localStorage.setItem('gpa_modal_shown', 'true');
     };
 
+    const recalculate = useCallback((data, excluded) => {
+        if (!data || !data.table) return;
+
+        let summation = 0;
+        let totalCredits = 0;
+        let hasRA = false;
+
+        data.table.forEach((course) => {
+            if (excluded.has(courseKey(course))) return;
+
+            const credits = parseInt(course.credits) || 0;
+            const grade = course.grade || "";
+
+            if (credits === 0) return;
+
+            if (grade.startsWith("RA") || grade.startsWith("0 ")) {
+                hasRA = true;
+            } else {
+                const points = gradePoints(grade, data.regulation);
+                if (points !== null) {
+                    summation += credits * points;
+                    totalCredits += credits;
+                }
+            }
+        });
+
+        if (hasRA) {
+            setCalculatedGpa("RA");
+        } else if (totalCredits === 0) {
+            setCalculatedGpa("0.00");
+        } else {
+            setCalculatedGpa(roundHalfUp(summation, totalCredits).toFixed(2));
+        }
+        setCalculatedCredits(totalCredits);
+    }, []);
+
     const fetchGpa = useCallback(async (forceRefresh = false) => {
         setIsLoading(true);
         const authToken = localStorage.getItem('auth_token');
@@ -42,8 +86,12 @@ function Gpa() {
             if (response.status === 401) return signInAgain(navigate, data.error);
             if (response.ok) {
                 setGpaData(data);
-                setCalculatedGpa(data.gpa);
-                setCalculatedCredits(data.total_credits);
+                if (excludedRef.current.size > 0) {
+                    recalculate(data, excludedRef.current);
+                } else {
+                    setCalculatedGpa(data.gpa);
+                    setCalculatedCredits(data.total_credits);
+                }
             } else {
                 setError(data.error || 'Failed to fetch GPA data.');
             }
@@ -53,68 +101,34 @@ function Gpa() {
         } finally {
             setIsLoading(false);
         }
-    }, [navigate]);
+    }, [navigate, recalculate]);
 
     useEffect(() => {
         fetchGpa(false);
     }, [fetchGpa]);
 
-    const toggleExclude = (index) => {
-        const newExcluded = new Set(excludedIndices);
-        if (newExcluded.has(index)) {
-            newExcluded.delete(index);
+    const hasData = Boolean(gpaData);
+
+    // A failed refresh leaves the last numbers on screen, so the message says so briefly and then gets out of the way
+    useEffect(() => {
+        if (!error || !hasData) return undefined;
+        const timer = setTimeout(() => setError(''), 6000);
+        return () => clearTimeout(timer);
+    }, [error, hasData]);
+
+    const toggleExclude = (key) => {
+        const newExcluded = new Set(excludedKeys);
+        if (newExcluded.has(key)) {
+            newExcluded.delete(key);
         } else {
-            newExcluded.add(index);
+            newExcluded.add(key);
         }
-        setExcludedIndices(newExcluded);
-        recalculate(newExcluded);
+        excludedRef.current = newExcluded;
+        setExcludedKeys(newExcluded);
+        recalculate(gpaData, newExcluded);
     };
 
-    const recalculate = (excluded) => {
-        if (!gpaData || !gpaData.table) return;
-
-        let summation = 0;
-        let totalCredits = 0;
-        let hasRA = false;
-
-        gpaData.table.forEach((course, index) => {
-            if (excluded.has(index)) return;
-
-            const credits = parseInt(course.credits) || 0;
-            const grade = course.grade || "";
-
-            if (credits === 0) return;
-
-            if (grade.startsWith("RA") || grade.startsWith("0 ")) {
-                hasRA = true;
-            } else {
-                try {
-                    let gradePoints = parseInt(grade.substring(0, 2));
-                    if (isNaN(gradePoints)) {
-                        const gMap = { 'O': 10, 'S': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'D': 4, 'E': 3 };
-                        gradePoints = gMap[grade.trim()];
-                    }
-                    if (!isNaN(gradePoints) && gradePoints !== undefined) {
-                        summation += credits * gradePoints;
-                        totalCredits += credits;
-                    }
-                } catch (e) {
-                    console.error("Error parsing grade:", grade);
-                }
-            }
-        });
-
-        if (hasRA) {
-            setCalculatedGpa("RA");
-        } else if (totalCredits === 0) {
-            setCalculatedGpa("0.00");
-        } else {
-            setCalculatedGpa((summation / totalCredits).toFixed(2));
-        }
-        setCalculatedCredits(totalCredits);
-    };
-
-    if (isLoading) return (
+    if (isLoading && !hasData) return (
         <div className="gpa-page-wrapper">
             <div className="gpa-card" style={{ padding: '2rem' }}>
                 <div className="gpa-header-section">
@@ -136,8 +150,10 @@ function Gpa() {
             </div>
         </div>
     );
-    if (error) return <div className="error-message">{error}</div>;
+    if (error && !hasData) return <div className="error-message">{friendlyError(error)}</div>;
     if (!gpaData) return <p>No GPA data found.</p>;
+
+    const gradeNotice = unrecognisedNotice(gpaData.table || [], gpaData.regulation);
 
     return (
         <div className="gpa-page-wrapper">
@@ -153,21 +169,30 @@ function Gpa() {
                 {/* Header matching image */}
                 <div className="gpa-header-section" style={{ position: 'relative' }}>
                     <div style={{ position: 'absolute', top: '0', right: '0' }}>
-                        <button onClick={() => fetchGpa(true)} title="Force fetch from eCampus" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '8px', borderRadius: '8px', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <RefreshCw size={20} />
+                        <button onClick={() => fetchGpa(true)} disabled={isLoading} aria-busy={isLoading} title="Force fetch from eCampus" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '8px', borderRadius: '8px', color: 'var(--text-secondary)', cursor: isLoading ? 'progress' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <RefreshIcon size={20} spinning={isLoading} />
                         </button>
                     </div>
                     <div>
                         <h1>GPA Calculator</h1>
                         <p>Track your academic performance across all courses</p>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginTop: '4px', fontStyle: 'italic' }}>
-                            Data may be cached for speed. Use the reload button to fetch live from eCampus.
-                        </p>
+                        {error ? (
+                            <p className="refresh-error" role="alert" style={{ marginTop: '4px' }}>Couldn't refresh. {friendlyError(error)}</p>
+                        ) : (
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginTop: '4px', fontStyle: 'italic' }}>
+                                Data may be cached for speed. Use the reload button to fetch live from eCampus.
+                            </p>
+                        )}
                     </div>
                 </div>
 
+                {gpaData.regulation_confirmed === false && (
+                    <RegulationPrompt suggested={gpaData.regulation} suggestedLabel="Detected" onSaved={() => fetchGpa(false)} />
+                )}
+                {gradeNotice && <p className="grade-notice" role="status">{gradeNotice}</p>}
+
                 {/* Summary Cards Row */}
-                <div className="summary-cards-row">
+                <div className="summary-cards-row refresh-haze" aria-busy={isLoading}>
                     <div className="gpa-summary-card">
                         <div className="summary-label">Total Credits</div>
                         <div className="summary-value">{calculatedCredits}</div>
@@ -179,7 +204,7 @@ function Gpa() {
                     <div className="gpa-summary-card">
                         <div className="summary-label">Total Courses</div>
                         <div className="summary-value courses-accent">
-                            {gpaData.table ? gpaData.table.length - excludedIndices.size : 0}
+                            {gpaData.table ? gpaData.table.filter(course => !excludedKeys.has(courseKey(course))).length : 0}
                         </div>
                     </div>
                 </div>
@@ -191,7 +216,7 @@ function Gpa() {
                         *While calculating GPA please exclude any additional one credit or fast track or additional open electives you may have done. 
                     </p>
                 </div>
-                <div className="table-section-glass">
+                <div className="table-section-glass refresh-haze" aria-busy={isLoading}>
                     <table className="gpa-modern-table">
                         <thead>
                             <tr>
@@ -208,13 +233,13 @@ function Gpa() {
                         </thead>
                         <tbody>
                             {gpaData.table && gpaData.table.map((course, index) => (
-                                <tr key={index} className={excludedIndices.has(index) ? 'excluded-row' : ''}>
+                                <tr key={index} className={excludedKeys.has(courseKey(course)) ? 'excluded-row' : ''}>
                                     <td className="checkbox-cell" style={{ textAlign: 'center' }} data-label="SELECT">
                                         <label className="modern-checkbox">
                                             <input 
                                                 type="checkbox" 
-                                                checked={!excludedIndices.has(index)} 
-                                                onChange={() => toggleExclude(index)}
+                                                checked={!excludedKeys.has(courseKey(course))}
+                                                onChange={() => toggleExclude(courseKey(course))}
                                             />
                                             <span className="checkmark"></span>
                                         </label>

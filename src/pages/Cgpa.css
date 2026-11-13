@@ -417,3 +417,886 @@
 .subjects-scroll-area::-webkit-scrollbar-thumb:hover {
     background: #444;
 }
+
+/* ---------- Semester estimator ---------- */
+
+.cgpa-est {
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 12px;
+    background: rgba(59, 130, 246, 0.07);
+    transition: border-color 0.15s ease;
+}
+
+.cgpa-est-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 64px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.cgpa-est-toggle-icon {
+    flex-shrink: 0;
+    color: var(--primary);
+}
+
+.cgpa-est-toggle-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.cgpa-est-toggle-hint {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 400;
+}
+
+.cgpa-est-chevron {
+    flex-shrink: 0;
+    color: var(--primary);
+    transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.cgpa-est-chevron.is-open {
+    transform: rotate(180deg);
+}
+
+.cgpa-est-panel {
+    overflow: hidden;
+}
+
+.cgpa-est-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 14px 14px;
+}
+
+.cgpa-est-regulation,
+.cgpa-est-note {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.cgpa-est-regulation button {
+    padding: 4px 2px;
+    background: none;
+    border: none;
+    color: var(--primary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.cgpa-est-courses {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 4px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* Name above its slider, with the grade beside both */
+.cgpa-est-course {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 12px;
+    align-items: center;
+}
+
+.cgpa-est-name {
+    grid-column: 1;
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    line-height: 1.3;
+    transition: opacity 0.2s ease;
+}
+
+.cgpa-est-credits {
+    margin-left: 6px;
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.cgpa-slider {
+    position: relative;
+    grid-column: 1;
+    height: 36px;
+    touch-action: pan-y; /* vertical swipes keep scrolling the page */
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    transition: opacity 0.2s ease;
+}
+
+.cgpa-est-course.is-off .cgpa-est-name,
+.cgpa-est-course.is-off .cgpa-slider {
+    opacity: 0.45;
+}
+
+/* Inset by the thumb's radius, so the thumb stays inside the row at both ends */
+.cgpa-slider-track {
+    position: absolute;
+    top: calc(50% - 2px);
+    left: 11px;
+    right: 11px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.cgpa-slider-fill {
+    position: absolute;
+    inset: 0;
+    border-radius: 2px;
+    background: var(--primary);
+    transform-origin: left center;
+}
+
+.cgpa-slider-stop {
+    position: absolute;
+    top: 0;
+    width: 4px;
+    height: 4px;
+    margin-left: -2px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.cgpa-slider-carriage {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.cgpa-slider-thumb {
+    position: absolute;
+    top: -9px;
+    left: -11px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 3px solid #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    transition: transform 100ms ease-out;
+}
+
+.cgpa-slider:active .cgpa-slider-thumb {
+    transform: scale(1.15);
+}
+
+.cgpa-slider:focus-visible .cgpa-slider-thumb {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.cgpa-est-badge {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    min-height: 48px;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.cgpa-est-badge:active {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.cgpa-est-badge:focus-visible,
+.cgpa-est-toggle:focus-visible,
+.cgpa-est-reset:focus-visible,
+.cgpa-est-regulation button:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.cgpa-est-letter {
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.15;
+}
+
+.cgpa-est-points {
+    color: var(--text-secondary);
+    font-size: 0.65rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.15;
+}
+
+.cgpa-est-badge-off {
+    color: var(--text-tertiary);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.cgpa-est-reveal {
+    overflow: hidden;
+}
+
+/* Pulled back over the list's gap and padded by the same amount, so the gap grows with the height
+   instead of appearing at once, and focus rings aren't clipped */
+.cgpa-est-reveal-gap {
+    margin: -10px -2px -2px;
+}
+
+.cgpa-est-reveal-inner {
+    padding: 10px 2px 2px;
+}
+
+/* ---------- Grade buttons ---------- */
+
+.cgpa-chips {
+    display: grid;
+    gap: 3px;
+}
+
+.cgpa-chip {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 52px;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    border-radius: 10px;
+    color: var(--text-secondary);
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.cgpa-chip:active {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.cgpa-chip.is-selected {
+    color: #fff;
+}
+
+.cgpa-chip:focus-visible,
+.cgpa-walk-actions button:focus-visible,
+.cgpa-reveal-continue:focus-visible,
+.cgpa-sum-row:focus-visible,
+.cgpa-sum-leave:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.cgpa-chip-marker {
+    position: absolute;
+    inset: 0;
+    border-radius: 10px;
+    background: var(--primary);
+}
+
+.cgpa-chip-letter,
+.cgpa-chip-points {
+    position: relative;
+    line-height: 1.15;
+}
+
+.cgpa-chip-letter {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.cgpa-chip-points {
+    font-size: 0.65rem;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.75;
+}
+
+/* ---------- Walkthrough ---------- */
+
+.cgpa-walk {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.cgpa-walk-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cgpa-walk-track {
+    flex: 1;
+    height: 4px;
+    overflow: hidden;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.cgpa-walk-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--primary);
+    transform-origin: left center;
+}
+
+.cgpa-walk-count {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* Cards share one grid cell so the old and new overlap as they swap */
+.cgpa-walk-stage {
+    display: grid;
+    min-height: 200px;
+    overflow: hidden;
+}
+
+.cgpa-walk-card {
+    grid-area: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.cgpa-walk-name {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1.3;
+}
+
+.cgpa-walk-credits {
+    margin: 4px 0 0;
+    color: var(--text-tertiary);
+    font-size: 0.8rem;
+}
+
+/* Fixed height: the question and the answer swap in the same place */
+.cgpa-walk-answer {
+    display: grid;
+    place-items: center;
+    min-height: 112px;
+    margin-top: 10px;
+}
+
+.cgpa-walk-answer-item {
+    grid-area: 1 / 1;
+}
+
+.cgpa-walk-question {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.cgpa-walk-letter {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 4.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+}
+
+.cgpa-walk-points {
+    margin: 6px 0 0;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.cgpa-walk-left-out {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.cgpa-walk-actions {
+    display: flex;
+    justify-content: space-between;
+}
+
+.cgpa-walk-actions button {
+    min-height: 44px;
+    padding: 0 4px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.cgpa-walk-actions button:disabled {
+    visibility: hidden;
+}
+
+/* ---------- Reveal ---------- */
+
+.cgpa-reveal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 359px; /* the walkthrough's height, so nothing below moves when it hands over */
+    text-align: center;
+}
+
+.cgpa-reveal-label {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.cgpa-reveal-value {
+    margin: 8px 0 0;
+    color: var(--text-primary);
+    font-size: 4.5rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    line-height: 1;
+}
+
+.cgpa-reveal-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.cgpa-reveal-change {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.cgpa-reveal-sem {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.cgpa-reveal-continue {
+    min-height: 44px;
+    margin-top: 14px;
+    padding: 0 20px;
+    background: var(--primary);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* ---------- Summary ---------- */
+
+.cgpa-sum {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cgpa-sum-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.cgpa-sum-course + .cgpa-sum-course {
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.cgpa-sum-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 46px;
+    padding: 8px 2px;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.cgpa-sum-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    line-height: 1.3;
+    transition: opacity 0.2s ease;
+}
+
+.cgpa-sum-credits {
+    flex-shrink: 0;
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.cgpa-sum-grade {
+    flex-shrink: 0;
+    width: 30px;
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: right;
+}
+
+.cgpa-sum-course.is-off .cgpa-sum-name {
+    opacity: 0.45;
+}
+
+.cgpa-sum-course.is-off .cgpa-sum-grade {
+    color: var(--text-tertiary);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.cgpa-sum-edit {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 2px 2px 8px;
+}
+
+.cgpa-sum-leave {
+    align-self: flex-start;
+    min-height: 40px;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-family: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .cgpa-chip:not(.is-selected):hover {
+        background: rgba(255, 255, 255, 0.09);
+    }
+
+    .cgpa-walk-actions button:hover,
+    .cgpa-sum-leave:hover {
+        color: var(--text-primary);
+    }
+}
+
+/* The answer leads the section */
+.cgpa-est-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+}
+
+.cgpa-est-results {
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+    min-width: 0;
+}
+
+.cgpa-est-result {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cgpa-est-result-label {
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+.cgpa-est-result-value {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+.cgpa-est-result-value.is-small {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.cgpa-est-change {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.cgpa-est-change.is-up {
+    color: var(--success);
+}
+
+.cgpa-est-change.is-down {
+    color: var(--danger);
+}
+
+.cgpa-est-reset {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 8px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.cgpa-est-reset:disabled {
+    cursor: default;
+    opacity: 0.4;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .cgpa-est-badge:hover {
+        background: rgba(255, 255, 255, 0.09);
+    }
+
+    .cgpa-est:has(.cgpa-est-toggle:hover) {
+        border-color: var(--primary);
+    }
+
+    .cgpa-est-reset:hover:not(:disabled) {
+        color: var(--text-primary);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cgpa-est-chevron,
+    .cgpa-slider-thumb {
+        transition: none;
+    }
+}
+/* ---------- Target CGPA ---------- */
+
+/* A quiet row in the result bar's language (small label over a big figure), set off from the bar below by a
+   hairline rather than a second card, and padded to line its figures up with the bar's */
+.cgpa-target {
+    padding: 0 12px 12px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cgpa-target-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.cgpa-target-figure {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.cgpa-target-figure.is-need {
+    align-items: flex-end;
+    margin-left: auto;
+    text-align: right;
+}
+
+.cgpa-target-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Styled as the figure it holds. 16px or more, so iOS doesn't zoom the page on focus */
+.cgpa-target-input {
+    width: 3em;
+    height: 40px;
+    padding: 0 0 2px;
+    background: none;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+    transition: border-color 0.15s ease;
+}
+
+.cgpa-target-input::placeholder {
+    color: var(--text-tertiary);
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.cgpa-target-input:focus {
+    border-bottom-color: var(--primary);
+    outline: none;
+}
+
+.cgpa-target-input[aria-invalid='true'] {
+    border-bottom-color: var(--danger);
+}
+
+/* − and + as one control */
+.cgpa-target-steps {
+    display: flex;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.cgpa-target-step {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.cgpa-target-step + .cgpa-target-step {
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cgpa-target-step:active:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+}
+
+.cgpa-target-step:disabled {
+    cursor: default;
+    opacity: 0.35;
+}
+
+.cgpa-target-step:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
+}
+
+.cgpa-target-need {
+    display: flex;
+    align-items: flex-end;
+    height: 40px;
+    padding-bottom: 3px;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+.cgpa-target-need.is-word {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.cgpa-target-need.is-good {
+    color: var(--success);
+}
+
+.cgpa-target-need.is-bad {
+    color: var(--danger);
+}
+
+/* Too narrow for both side by side: the answer goes under the target, read top to bottom */
+@media (max-width: 359px) {
+    .cgpa-target-figure.is-need {
+        align-items: flex-start;
+        margin-left: 0;
+        text-align: left;
+    }
+}
+
+.cgpa-target-note {
+    margin: 0;
+    padding-top: 8px;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .cgpa-target-step:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text-primary);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cgpa-target-input,
+    .cgpa-target-step {
+        transition: none;
+    }
+}

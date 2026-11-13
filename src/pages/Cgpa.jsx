@@ -1,21 +1,31 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import Modal from '../components/Modal';
-import { RefreshCw, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
+import RefreshIcon from '../components/RefreshIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { signInAgain } from '../utils/session';
+import { friendlyError } from '../utils/friendlyError';
+import { gradePoints, unrecognisedNotice } from '../utils/grading';
+import { roundHalfUp } from '../utils/cgpaEstimate';
+import RegulationPrompt from '../components/RegulationPrompt';
+import GradeEstimator from './cgpa/GradeEstimator';
 import './Cgpa.css';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+
+// Exclusions follow the course, so they still mean the same thing if a refresh changes the rows
+const courseKey = (subject) => `${subject.sem}|${subject.course}|${subject.title}`;
 
 function Cgpa() {
     const navigate = useNavigate();
     const [cgpaData, setCgpaData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
-    const [excludedIds, setExcludedIds] = useState(new Set());
+    const [excludedKeys, setExcludedKeys] = useState(new Set());
+    const excludedRef = useRef(excludedKeys); // the latest selection, for a refresh that answers after a toggle
     const [displayData, setDisplayData] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -31,8 +41,6 @@ function Cgpa() {
         localStorage.setItem('cgpa_modal_shown', 'true');
     };
 
-    const gradesMap = { 'O': 10, 'S': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'D': 4, 'E': 3 };
-
     const recalculate = useCallback((data, excluded) => {
         if (!data || !data.all_subjects) return;
 
@@ -41,8 +49,8 @@ function Cgpa() {
         let totalCreditPoints = 0;
         let hasIncludedRA = false;
 
-        data.all_subjects.forEach((subject, index) => {
-            if (excluded.has(index)) return;
+        data.all_subjects.forEach((subject) => {
+            if (excluded.has(courseKey(subject))) return;
 
             const grade = subject.grade;
             const credits = parseInt(subject.credits) || 0;
@@ -53,12 +61,15 @@ function Cgpa() {
                 return;
             }
 
-            const gradePoints = gradesMap[grade] || 0;
+            // Grades we don't recognise count for nothing, credits included (2026-10-21 decision)
+            const points = gradePoints(grade, data.regulation);
+            if (!points) return;
+
             totalCredits += credits;
-            totalCreditPoints += gradePoints * credits;
+            totalCreditPoints += points * credits;
 
             if (!semData[sem]) semData[sem] = [];
-            semData[sem].push({ gradePoints, credits });
+            semData[sem].push({ gradePoints: points, credits });
         });
 
         const semwise_data = [];
@@ -75,8 +86,8 @@ function Cgpa() {
 
             semwise_data.push({
                 sem: parseInt(semKey),
-                sgpa: semCredits ? (semCP / semCredits).toFixed(2) : "0.00",
-                cgpa: cumulativeCredits ? (cumulativeCP / cumulativeCredits).toFixed(2) : "0.00"
+                sgpa: semCredits ? roundHalfUp(semCP, semCredits).toFixed(2) : "0.00",
+                cgpa: cumulativeCredits ? roundHalfUp(cumulativeCP, cumulativeCredits).toFixed(2) : "0.00"
             });
         });
 
@@ -103,7 +114,7 @@ function Cgpa() {
             if (response.status === 401) return signInAgain(navigate, data.error);
             if (response.ok) {
                 setCgpaData(data);
-                recalculate(data, new Set());
+                recalculate(data, excludedRef.current);
             } else {
                 setError(data.error || 'Failed to fetch CGPA data.');
             }
@@ -119,18 +130,28 @@ function Cgpa() {
         fetchCgpa(false);
     }, [fetchCgpa]);
 
-    const toggleExclude = (index) => {
-        const newExcluded = new Set(excludedIds);
-        if (newExcluded.has(index)) {
-            newExcluded.delete(index);
+    const hasData = Boolean(cgpaData && displayData);
+
+    // A failed refresh leaves the last numbers on screen, so the message says so briefly and then gets out of the way
+    useEffect(() => {
+        if (!error || !hasData) return undefined;
+        const timer = setTimeout(() => setError(''), 6000);
+        return () => clearTimeout(timer);
+    }, [error, hasData]);
+
+    const toggleExclude = (key) => {
+        const newExcluded = new Set(excludedKeys);
+        if (newExcluded.has(key)) {
+            newExcluded.delete(key);
         } else {
-            newExcluded.add(index);
+            newExcluded.add(key);
         }
-        setExcludedIds(newExcluded);
+        excludedRef.current = newExcluded;
+        setExcludedKeys(newExcluded);
         recalculate(cgpaData, newExcluded);
     };
 
-    if (isLoading) return (
+    if (isLoading && !hasData) return (
         <div className="cgpa-page-wrapper">
             <div className="cgpa-card" style={{ padding: '2rem' }}>
                 <div className="cgpa-summary" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
@@ -161,10 +182,12 @@ function Cgpa() {
             </div>
         </div>
     );
-    if (error) return <div className="error-message">{error}</div>;
+    if (error && !hasData) return <div className="error-message">{friendlyError(error)}</div>;
     if (!cgpaData || !displayData) {
         return <p>No CGPA data available to display.</p>;
     }
+
+    const gradeNotice = unrecognisedNotice(cgpaData.all_subjects || [], cgpaData.regulation);
 
     // Performance colors from image
     const pink = '#FF5CBE';
@@ -268,25 +291,45 @@ function Cgpa() {
                 {/* Summary Section */}
                 <div className="cgpa-summary" style={{ position: 'relative' }}>
                     <div style={{ position: 'absolute', top: '20px', right: '20px' }}>
-                        <button onClick={() => fetchCgpa(true)} title="Force fetch from eCampus" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '8px', borderRadius: '8px', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <RefreshCw size={20} />
+                        <button onClick={() => fetchCgpa(true)} disabled={isLoading} aria-busy={isLoading} title="Force fetch from eCampus" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '8px', borderRadius: '8px', color: 'var(--text-secondary)', cursor: isLoading ? 'progress' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <RefreshIcon size={20} spinning={isLoading} />
                         </button>
                     </div>
-                    <h2>Total Credits: {displayData.total_credits}</h2>
-                    <h2>Total Credit Points: {displayData.credit_points_total}</h2>
-                    <h2 className={displayData.cgpa === "RA" ? "text-error" : ""}>
-                        Overall CGPA: {displayData.cgpa}
-                    </h2>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginTop: '12px', fontStyle: 'italic', fontWeight: 'normal' }}>
-                        Data may be cached for speed. Use the reload button to fetch live from eCampus.
-                    </p>
+                    <div className="refresh-haze" aria-busy={isLoading}>
+                        <h2>Total Credits: {displayData.total_credits}</h2>
+                        <h2>Total Credit Points: {displayData.credit_points_total}</h2>
+                        <h2 className={displayData.cgpa === "RA" ? "text-error" : ""}>
+                            Overall CGPA: {displayData.cgpa}
+                        </h2>
+                    </div>
+                    {error ? (
+                        <p className="refresh-error" role="alert" style={{ marginTop: '12px', fontWeight: 'normal' }}>Couldn't refresh. {friendlyError(error)}</p>
+                    ) : (
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginTop: '12px', fontStyle: 'italic', fontWeight: 'normal' }}>
+                            Data may be cached for speed. Use the reload button to fetch live from eCampus.
+                        </p>
+                    )}
                 </div>
+
+                {cgpaData.regulation_confirmed === false && (
+                    <RegulationPrompt suggested={cgpaData.regulation} suggestedLabel="Detected" onSaved={() => fetchCgpa(false)} />
+                )}
+                {gradeNotice && <p className="grade-notice" role="status">{gradeNotice}</p>}
+
+                <GradeEstimator
+                    courses={cgpaData.in_progress || []}
+                    regulation={cgpaData.regulation}
+                    basePoints={displayData.credit_points_total}
+                    baseCredits={displayData.total_credits}
+                    currentCgpa={displayData.cgpa}
+                    onRegulationSaved={() => fetchCgpa(false)}
+                />
 
                 <div className="cgpa-content-grid">
                     {/* Table Section */}
                     <div className="table-section">
                         <h3 className="section-title">Semester-wise Summary</h3>
-                        <table className="cgpa-table">
+                        <table className="cgpa-table refresh-haze" aria-busy={isLoading}>
                             <thead>
                                 <tr>
                                     <th>SEM</th>
@@ -314,7 +357,7 @@ function Cgpa() {
                                 *While calculating CGPA please exclude any one credit or fast track or additional open electives you may have done. Only include that while calculating final CGPA at end of college
                             </p>
                         </div>
-                        <div className="subjects-scroll-area">
+                        <div className="subjects-scroll-area refresh-haze" aria-busy={isLoading}>
                             <table className="subjects-table">
                                 <thead>
                                     <tr>
@@ -328,13 +371,13 @@ function Cgpa() {
                                 </thead>
                                 <tbody>
                                     {cgpaData.all_subjects && cgpaData.all_subjects.map((subject, index) => (
-                                        <tr key={index} className={excludedIds.has(index) ? 'excluded-row' : ''}>
+                                        <tr key={index} className={excludedKeys.has(courseKey(subject)) ? 'excluded-row' : ''}>
                                             <td>
                                                 <label className="modern-checkbox">
                                                     <input 
                                                         type="checkbox" 
-                                                        checked={!excludedIds.has(index)} 
-                                                        onChange={() => toggleExclude(index)}
+                                                        checked={!excludedKeys.has(courseKey(subject))}
+                                                        onChange={() => toggleExclude(courseKey(subject))}
                                                     />
                                                     <span className="checkmark"></span>
                                                 </label>
@@ -357,7 +400,7 @@ function Cgpa() {
                 {/* Chart Section */}
                 <div className="chart-section">
                     <h2 className="chart-title">Academic Performance Trends</h2>
-                    <div className="chart-container">
+                    <div className="chart-container refresh-haze" aria-busy={isLoading}>
                         <Line data={chartData} options={chartOptions} />
                     </div>
                 </div>

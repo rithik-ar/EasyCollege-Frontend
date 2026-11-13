@@ -57,11 +57,20 @@
     -webkit-text-fill-color: initial; /* Reset gradient text masking for icons */
 }
 
-.action-icon-btn:hover, .info-icon-btn:hover {
+/* Blue only while pressed; on touch a plain :hover would stick after the tap */
+.action-icon-btn:active:not(:disabled), .info-icon-btn:active {
     background: var(--primary-glow);
     border-color: var(--primary);
     color: var(--text-primary);
-    transform: translateY(-2px);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .action-icon-btn:hover:not(:disabled), .info-icon-btn:hover {
+        background: var(--primary-glow);
+        border-color: var(--primary);
+        color: var(--text-primary);
+        transform: translateY(-2px);
+    }
 }
 
 .attendance-header-section p {

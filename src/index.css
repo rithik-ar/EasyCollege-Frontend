@@ -784,6 +784,53 @@ table.attendance-table tr:hover td {
     }
 }
 
+/* Refreshing in place: values that may change recede (smaller, grey and dim), then come forward as the
+   new ones land. No blur: the numbers stay readable, and they are still the last known values. */
+.refresh-haze {
+    transition-property: transform, opacity, filter;
+    transition-duration: 480ms;
+    transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.refresh-haze[aria-busy="true"] {
+    transform: scale(0.96);
+    opacity: 0.55;
+    filter: saturate(0.35);
+    transition-duration: 300ms;
+    transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .refresh-haze[aria-busy="true"] {
+        transform: none;
+    }
+}
+
+@media (prefers-contrast: more) {
+    .refresh-haze[aria-busy="true"] {
+        opacity: 0.8;
+        filter: none;
+    }
+}
+
+.action-icon-btn:disabled,
+.refresh-btn:disabled {
+    cursor: progress;
+}
+
+/* Doubled class: it has to outrank page rules such as `.gpa-header-section p` */
+.refresh-error.refresh-error {
+    color: var(--danger);
+    font-size: 0.85rem;
+}
+
+.grade-notice {
+    margin: 0;
+    color: var(--warning);
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
 /* Utilities */
 .text-success {
     color: var(--success);

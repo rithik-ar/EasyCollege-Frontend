@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, RefreshCw, AlertCircle, CheckCircle2, Wand2, ArrowLeft, Save, TrendingUp } from 'lucide-react';
+import { BookOpen, AlertCircle, CheckCircle2, Wand2, ArrowLeft, Save, TrendingUp } from 'lucide-react';
+import RefreshIcon from '../components/RefreshIcon';
 import { SIMULATOR_TABLE_IDS, analyzeComponents, calculateTotal, calculateNeededForNext } from '../utils/internalsSimulation';
 import { useNavigate } from 'react-router-dom';
 import { signInAgain } from '../utils/session';
+import { friendlyError } from '../utils/friendlyError';
 import './Internals.css';
 
 function Internals() {
@@ -13,6 +15,11 @@ function Internals() {
     const [error, setError] = useState('');
     const [simulatingId, setSimulatingId] = useState(null);
     const [simData, setSimData] = useState({});
+    const simulatingIdRef = useRef(null); // the open simulator, for a refresh that answers while marks are being typed
+
+    useEffect(() => {
+        simulatingIdRef.current = simulatingId;
+    }, [simulatingId]);
 
     const fetchInternals = useCallback(async (forceRefresh = false) => {
         setIsLoading(true);
@@ -36,7 +43,10 @@ function Internals() {
                     const components = analyzeComponents(course);
                     initialSim[course.course_code] = components;
                 });
-                setSimData(initialSim);
+                setSimData(prev => {
+                    const openId = simulatingIdRef.current;
+                    return openId && prev[openId] ? { ...initialSim, [openId]: prev[openId] } : initialSim;
+                });
             } else {
                 setError(data.error || 'Failed to fetch internal marks.');
             }
@@ -62,6 +72,15 @@ function Internals() {
         fetchInternals(false);
     }, [fetchInternals]);
 
+    const hasData = internalsData.length > 0;
+
+    // A failed refresh leaves the last numbers on screen, so the message says so briefly and then gets out of the way
+    useEffect(() => {
+        if (!error || !hasData) return undefined;
+        const timer = setTimeout(() => setError(''), 6000);
+        return () => clearTimeout(timer);
+    }, [error, hasData]);
+
     const getMarkStatus = (total) => {
         if (total === "Not Updated Yet") return 'pending';
         const mark = parseFloat(total);
@@ -71,7 +90,7 @@ function Internals() {
         return 'low';
     };
 
-    if (isLoading) return (
+    if (isLoading && !hasData) return (
         <div className="internals-container" style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
             <div className="skeleton skeleton-text" style={{ width: '120px', marginBottom: '2rem' }}></div>
             <div className="marks-table-container">
@@ -87,27 +106,31 @@ function Internals() {
 
     return (
         <div className="internals-container">
-            {!isLoading && !error && (
+            {(!error || hasData) && (
                 <div className="table-controls" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
-                    <button className="refresh-btn" onClick={() => fetchInternals(true)} title="Force fetch from eCampus">
-                        <RefreshCw size={18} />
+                    <button className="refresh-btn" onClick={() => fetchInternals(true)} disabled={isLoading} aria-busy={isLoading} title="Force fetch from eCampus">
+                        <RefreshIcon size={18} spinning={isLoading} />
                         <span>Sync Marks</span>
                     </button>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', fontStyle: 'italic', paddingLeft: '4px' }}>
-                        Data may be cached for speed. Use sync to fetch live from eCampus.
-                    </span>
+                    {error ? (
+                        <span className="refresh-error" role="alert" style={{ paddingLeft: '4px' }}>Couldn't refresh. {friendlyError(error)}</span>
+                    ) : (
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', fontStyle: 'italic', paddingLeft: '4px' }}>
+                            Data may be cached for speed. Use sync to fetch live from eCampus.
+                        </span>
+                    )}
                 </div>
             )}
 
-            {error ? (
+            {error && !hasData ? (
                 <motion.div
                     className="error-card"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                 >
                     <AlertCircle size={40} />
-                    <p>{error}</p>
-                    <button onClick={fetchInternals}>Retry</button>
+                    <p>{friendlyError(error)}</p>
+                    <button onClick={() => fetchInternals(false)}>Retry</button>
                 </motion.div>
             ) : (
                 <motion.div
@@ -117,7 +140,8 @@ function Internals() {
                     transition={{ duration: 0.5 }}
                 >
                     {internalsData.length > 0 ? (
-                        <div className="table-wrapper">
+                        // Not hazed while a simulator is open: nobody should have to type into the fog
+                        <div className="table-wrapper refresh-haze" aria-busy={isLoading && !simulatingId}>
                             <table className="marks-table">
                                 <thead>
                                     <tr>
