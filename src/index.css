@@ -192,6 +192,65 @@ body {
     }
 }
 
+/* Ecampus outage page */
+.outage-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 80px);
+    padding: 24px;
+}
+
+.outage-card {
+    width: 100%;
+    max-width: 520px;
+    padding: clamp(2rem, 7vw, 3.5rem);
+    text-align: center;
+    background: linear-gradient(145deg, rgba(24, 24, 30, 0.9), rgba(12, 12, 16, 0.82));
+    border: 1px solid var(--glass-border);
+    border-radius: 28px;
+    box-shadow: var(--shadow-md), var(--shadow-glow);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+}
+
+.outage-icon {
+    width: 60px;
+    height: 60px;
+    display: grid;
+    place-items: center;
+    margin: 0 auto 1.5rem;
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    border-radius: 20px;
+}
+
+.outage-eyebrow {
+    margin-bottom: 0.65rem;
+    color: var(--secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.outage-card h1 {
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    font-size: clamp(1.7rem, 5vw, 2.2rem);
+    line-height: 1.15;
+    letter-spacing: -0.04em;
+}
+
+.outage-message {
+    max-width: 38ch;
+    margin: 0 auto;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    line-height: 1.7;
+}
+
 /* Login Page */
 .login-wrapper {
     display: flex;
