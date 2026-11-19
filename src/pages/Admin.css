@@ -1657,6 +1657,82 @@ body.adm-body {
     color: var(--adm-text-2);
 }
 
+/* Internals: a course opens to its test marks underneath, as one block with its row */
+.adm-int-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 0;
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.adm-int-chevron {
+    flex-shrink: 0;
+    color: var(--adm-text-3);
+    transition: transform 0.2s ease;
+}
+
+.adm-int-toggle[aria-expanded='true'] .adm-int-chevron {
+    transform: rotate(180deg);
+}
+
+.adm-int tr.is-open > th,
+.adm-int tr.is-open > td {
+    border-bottom-color: transparent;
+}
+
+.adm-table .adm-int-detail td {
+    padding: 0;
+    border-bottom: 0;
+    text-align: left;
+    white-space: normal;
+}
+
+.adm-int-reveal {
+    overflow: hidden;
+    border-bottom: 1px solid var(--adm-line);
+}
+
+.adm-int-parts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 10px 16px;
+    margin: 0;
+    padding: 2px 0 14px;
+}
+
+.adm-int-parts dt {
+    font-family: var(--adm-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--adm-text-3);
+}
+
+.adm-int-parts dd {
+    margin: 2px 0 0;
+    font-size: 0.8125rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .adm-int-toggle:hover .adm-int-chevron {
+        color: var(--adm-text-2);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .adm-int-chevron {
+        transition: none;
+    }
+}
+
 .adm-att td:last-child {
     text-align: left;
     padding-left: 20px;

@@ -34,6 +34,9 @@ function GradeEstimator({ courses, regulation, basePoints, baseCredits, currentC
     const [picks, setPicks] = useState({}); // course code -> letter
     const [leftOut, setLeftOut] = useState({}); // course code -> true when not counted
     const [targetText, setTargetText] = useState(''); // the target CGPA as typed
+    const [semGpaText, setSemGpaText] = useState(''); // the semester GPA as typed, for the CGPA it gives
+    const [plannerMode, setPlannerMode] = useState('target'); // 'target' or 'sem': which side of the planner is typed into
+    const [hasSwapped, setHasSwapped] = useState(false); // ⇄ used this visit: its hint line has done its job
     const [stage, setStage] = useState(FIRST_STAGE); // 'walkthrough', 'reveal' or 'summary'
     const [step, setStep] = useState(0);
     const [direction, setDirection] = useState(1);
@@ -86,6 +89,7 @@ function GradeEstimator({ courses, regulation, basePoints, baseCredits, currentC
         setPicks({});
         setLeftOut({});
         setTargetText('');
+        setSemGpaText(''); // the planner keeps its direction: Reset clears what was typed, not which way it reads
         setStep(0);
         setDirection(1);
         setStage(FIRST_STAGE);
@@ -156,14 +160,18 @@ function GradeEstimator({ courses, regulation, basePoints, baseCredits, currentC
                                             )}
                                             {view === 'summary' && (
                                                 <TargetPlanner
-                                                    text={targetText}
-                                                    onTextChange={setTargetText}
+                                                    mode={plannerMode}
+                                                    onModeChange={(next) => { setPlannerMode(next); setHasSwapped(true); }}
+                                                    showSwapHint={!hasSwapped}
+                                                    text={plannerMode === 'sem' ? semGpaText : targetText}
+                                                    onTextChange={plannerMode === 'sem' ? setSemGpaText : setTargetText}
                                                     counted={countedCourses}
                                                     scale={scale}
                                                     basePoints={basePoints}
                                                     baseCredits={baseCredits}
                                                     currentCgpa={currentCgpa}
                                                     cgpa={cgpa}
+                                                    semGpa={semGpa}
                                                 />
                                             )}
                                             {view === 'summary' && (
@@ -180,7 +188,7 @@ function GradeEstimator({ courses, regulation, basePoints, baseCredits, currentC
                                                     onToggleLeftOut={toggleLeftOut}
                                                     onStartOver={startOver}
                                                     startOverLabel={WALKTHROUGH_ENABLED ? 'Start over' : 'Reset'}
-                                                    canStartOver={WALKTHROUGH_ENABLED || targetText !== '' || Object.keys(picks).length > 0 || Object.values(leftOut).some(Boolean)}
+                                                    canStartOver={WALKTHROUGH_ENABLED || targetText !== '' || semGpaText !== '' || Object.keys(picks).length > 0 || Object.values(leftOut).some(Boolean)}
                                                 />
                                             )}
                                         </MotionDiv>

@@ -1,9 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { CircleAlert, CircleCheck, CornerDownLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown, CircleAlert, CircleCheck, CornerDownLeft } from 'lucide-react';
 import { API_URL } from './useAdminFetch';
 import { Meter, Panel, PanelState, Segmented, Skeleton } from './AdminParts';
 import SemesterTrend from './SemesterTrend';
-import { formatAgo, formatDayTime, formatNumber } from './format';
+import { ADMIN_SPRING, formatAgo, formatDayTime, formatNumber } from './format';
+import { smoothFade } from '../cgpa/motionOptions';
+
+const MotionDiv = motion.div;
 
 const DATASETS = {
     attendance: '/api/attendance',
@@ -15,6 +19,12 @@ const IDLE = { data: null, error: '', isLoading: false };
 const EMPTY = { attendance: IDLE, internals: IDLE, gpa: IDLE, cgpa: IDLE };
 const TABS = [['attendance', 'Attendance'], ['internals', 'Internals'], ['results', 'Results']];
 const meterTone = (percent) => (percent >= 75 ? 'good' : percent >= 65 ? 'warning' : 'critical');
+const courseKey = (course) => `${course.table_id}-${course.course_code}`;
+const isPending = (value) => value === '' || value === '*' || value == null;
+// The per-test marks open below their course: height on the admin spring, closing quicker than it opens
+const PARTS_OPEN = { height: 'auto', opacity: 1, y: 0, transition: ADMIN_SPRING };
+const PARTS_CLOSED = { height: 0, opacity: 0, y: -4 };
+const PARTS_EXIT = { ...PARTS_CLOSED, transition: { ...ADMIN_SPRING, duration: 0.2 } };
 
 function StudentSearch({ token, onExpired, requestedRoll, inputRef, recent, onRemember }) {
     const [roll, setRoll] = useState('');
@@ -23,6 +33,7 @@ function StudentSearch({ token, onExpired, requestedRoll, inputRef, recent, onRe
     const [error, setError] = useState('');
     const [datasets, setDatasets] = useState(EMPTY);
     const [tab, setTab] = useState('attendance');
+    const [openCourses, setOpenCourses] = useState(() => new Set()); // internals rows showing their test marks
     const lookupId = useRef(0);
 
     const loadDataset = useCallback(async (name, studentToken, id) => {
@@ -52,6 +63,7 @@ function StudentSearch({ token, onExpired, requestedRoll, inputRef, recent, onRe
         setError('');
         setStudent(null);
         setDatasets(EMPTY);
+        setOpenCourses(new Set());
         try {
             const response = await fetch(`${API_URL}/api/admin/student-info/${encodeURIComponent(normalized)}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -90,6 +102,14 @@ function StudentSearch({ token, onExpired, requestedRoll, inputRef, recent, onRe
     }, [requestedRoll, lookup]);
 
     const { attendance, internals, gpa, cgpa } = datasets;
+    const expandable = Array.isArray(internals.data) ? internals.data.filter(course => course.components?.length > 0) : [];
+    const allOpen = expandable.length > 0 && expandable.every(course => openCourses.has(courseKey(course)));
+    const toggleCourse = (key) => setOpenCourses(prev => {
+        const next = new Set(prev);
+        if (next.has(key)) next.delete(key); else next.add(key);
+        return next;
+    });
+    const toggleAll = () => setOpenCourses(allOpen ? new Set() : new Set(expandable.map(courseKey)));
 
     return (
         <div className="adm-stack">
@@ -195,7 +215,15 @@ function StudentSearch({ token, onExpired, requestedRoll, inputRef, recent, onRe
                     )}
 
                     {tab === 'internals' && (
-                        <Panel title="Internals" meta="CA marks, old eCampus site">
+                        <Panel
+                            title="Internals"
+                            meta="CA marks, old eCampus site"
+                            actions={expandable.length > 0 && (
+                                <button type="button" className="adm-btn adm-btn-quiet" onClick={toggleAll}>
+                                    {allOpen ? 'Collapse all' : 'Show all tests'}
+                                </button>
+                            )}
+                        >
                             <PanelState
                                 isLoading={internals.isLoading}
                                 error={internals.error}
@@ -206,7 +234,7 @@ function StudentSearch({ token, onExpired, requestedRoll, inputRef, recent, onRe
                             />
                             {Array.isArray(internals.data) && internals.data.length > 0 && (
                                 <div className="adm-scroll">
-                                    <table className="adm-table">
+                                    <table className="adm-table adm-int">
                                         <thead>
                                             <tr>
                                                 <th scope="col">Course</th>
@@ -215,20 +243,74 @@ function StudentSearch({ token, onExpired, requestedRoll, inputRef, recent, onRe
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {internals.data.map(course => (
-                                                <tr key={`${course.table_id}-${course.course_code}`}>
-                                                    <th scope="row">
+                                            {internals.data.map(course => {
+                                                const key = courseKey(course);
+                                                const parts = course.components || [];
+                                                const isOpen = parts.length > 0 && openCourses.has(key);
+                                                const label = (
+                                                    <>
                                                         <span className="adm-mono">{course.course_code}</span>
                                                         <span className="adm-course">{course.course_name}</span>
-                                                    </th>
-                                                    <td className="adm-num">
-                                                        {course.total || '--'}<span className="adm-dim"> / {course.total_max ?? '--'}</span>
-                                                    </td>
-                                                    <td className="adm-num">
-                                                        {course.total_converted ?? '--'}<span className="adm-dim"> / {course.target_max ?? '--'}</span>
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                                    </>
+                                                );
+                                                return (
+                                                    <React.Fragment key={key}>
+                                                        <tr className={isOpen ? 'is-open' : undefined}>
+                                                            <th scope="row">
+                                                                {parts.length > 0 ? (
+                                                                    <button
+                                                                        type="button"
+                                                                        className="adm-int-toggle"
+                                                                        aria-expanded={isOpen}
+                                                                        aria-controls={`adm-int-${key}`}
+                                                                        onClick={() => toggleCourse(key)}
+                                                                    >
+                                                                        <span>{label}</span>
+                                                                        <ChevronDown size={14} className="adm-int-chevron" aria-hidden="true" />
+                                                                    </button>
+                                                                ) : label}
+                                                            </th>
+                                                            <td className="adm-num">
+                                                                {course.total || '--'}
+                                                                {course.total_calculated && <span className="adm-dim" title="Summed from the test marks: eCampus left the Total blank">*</span>}
+                                                                <span className="adm-dim"> / {course.total_max ?? '--'}</span>
+                                                            </td>
+                                                            <td className="adm-num">
+                                                                {course.total_converted ?? '--'}<span className="adm-dim"> / {course.target_max ?? '--'}</span>
+                                                            </td>
+                                                        </tr>
+                                                        {parts.length > 0 && (
+                                                            <tr className="adm-int-detail" id={`adm-int-${key}`}>
+                                                                <td colSpan={3}>
+                                                                    <AnimatePresence initial={false}>
+                                                                        {isOpen && (
+                                                                            <MotionDiv
+                                                                                className="adm-int-reveal"
+                                                                                initial={PARTS_CLOSED}
+                                                                                animate={PARTS_OPEN}
+                                                                                exit={PARTS_EXIT}
+                                                                                {...smoothFade}
+                                                                            >
+                                                                                <dl className="adm-int-parts">
+                                                                                    {parts.map((part, index) => (
+                                                                                        <div key={`${part.name}-${index}`}>
+                                                                                            <dt>{part.name || '--'}</dt>
+                                                                                            <dd className="adm-num">
+                                                                                                {isPending(part.value) ? <span className="adm-dim">--</span> : part.value}
+                                                                                                {part.max != null && <span className="adm-dim"> / {part.max}</span>}
+                                                                                            </dd>
+                                                                                        </div>
+                                                                                    ))}
+                                                                                </dl>
+                                                                            </MotionDiv>
+                                                                        )}
+                                                                    </AnimatePresence>
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </React.Fragment>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>

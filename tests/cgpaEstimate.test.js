@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { roundHalfUp, startingGrade, estimateCgpa, changeFromCurrent, formatChange, targetNeed, parseTarget } from '../src/utils/cgpaEstimate.js';
+import { roundHalfUp, startingGrade, estimateCgpa, changeFromCurrent, formatChange, targetNeed, parseTarget, cgpaFromSemGpa } from '../src/utils/cgpaEstimate.js';
 import { GRADE_SCALES } from '../src/utils/grading.js';
 
 test('a tie rounds up, including with half points', () => {
@@ -94,4 +94,28 @@ test('a typed target is read only once it is a CGPA', () => {
     assert.equal(parseTarget('11'), null);
     assert.equal(parseTarget('8.555'), null);
     assert.equal(parseTarget('0'), null);
+});
+
+test('sem GPA to CGPA: worked example', () => {
+    // 360 over 45, then 15 credits at 9.00 = 135: 495 / 60 = 8.25
+    assert.equal(cgpaFromSemGpa(360, 45, 15, 9), 8.25);
+    // 4 credits at 8.13 = 32.52, taken as 32.5: 362.5 / 49 = 7.3979 -> 7.40
+    assert.equal(cgpaFromSemGpa(330, 45, 4, 8.13), 7.4);
+});
+
+test('sem GPA to CGPA: a tie rounds up', () => {
+    // 280 + 5 x 9 = 325 over 40 = 8.125, shown as 8.13
+    assert.equal(cgpaFromSemGpa(280, 35, 5, 9), 8.13);
+});
+
+test('sem GPA to CGPA: no history gives the sem GPA, nothing counted gives null', () => {
+    assert.equal(cgpaFromSemGpa(0, 0, 20, 8.5), 8.5);
+    assert.equal(cgpaFromSemGpa(360, 45, 0, 9), null);
+});
+
+test('sem GPA to CGPA: the GPA a target needs gets there', () => {
+    for (const [base, credits, sem, target] of [[360, 45, 15, 8.25], [280, 35, 5, 8.13], [413, 52, 22, 8.01], [0, 0, 7, 6.3]]) {
+        const need = targetNeed(base, credits, sem, target, RELATIVE);
+        assert.ok(cgpaFromSemGpa(base, credits, sem, need.neededGpa) >= target, `${base}/${credits} +${sem} -> ${target}`);
+    }
 });

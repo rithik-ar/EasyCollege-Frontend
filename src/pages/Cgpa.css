@@ -1165,6 +1165,32 @@
     text-align: right;
 }
 
+/* The label and the answer fade as one when ⇄ switches the question */
+.cgpa-target-label {
+    display: block;
+}
+
+.cgpa-target-answer {
+    display: flex;
+    flex-direction: column;
+    align-items: inherit;
+    gap: 4px;
+}
+
+.cgpa-target-need .cgpa-est-change {
+    margin-left: 6px;
+    padding-bottom: 2px;
+}
+
+/* ⇄ is the third cell of the −/+ control, set apart by a stronger divider since it changes the question, not the number */
+.cgpa-target-step.is-swap {
+    border-left-color: rgba(255, 255, 255, 0.2);
+}
+
+.cgpa-target-swap-icon {
+    display: flex;
+}
+
 .cgpa-target-field {
     display: flex;
     align-items: center;
@@ -1285,6 +1311,15 @@
     color: var(--text-secondary);
     font-size: 0.8rem;
     line-height: 1.4;
+}
+
+/* The ⇄ hint is quieter than a note that's about the student's numbers */
+.cgpa-target-note.is-hint {
+    color: var(--text-tertiary);
+}
+
+.cgpa-target-hint-icon {
+    vertical-align: -1px;
 }
 
 @media (hover: hover) and (pointer: fine) {

@@ -68,6 +68,14 @@ export function targetNeed(basePoints, baseCredits, semCredits, target, scale) {
     };
 }
 
+// The other way round: the CGPA eCampus would show if this semester's GPA came out at semGpa.
+// semCredits: the credits being counted. The semester total is taken to the nearest half-point (grades come
+// in halves) and rounded half up, as estimateCgpa does. Null with nothing counted.
+export function cgpaFromSemGpa(basePoints, baseCredits, semCredits, semGpa) {
+    if (!(semCredits > 0)) return null;
+    return roundHalfUp(basePoints + semGpa * semCredits, baseCredits + semCredits);
+}
+
 export const MAX_TARGET = 10;
 
 // A typed target CGPA: "8.5" -> 8.5, or null while the text isn't one yet ("", "11", "8.555")
