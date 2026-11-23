@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 function Feedback() {
     useEffect(() => {
         // Redirect to the Streamlit feedback app (same as Easy-College Flask version)
-        window.location.href = "https://feedbackauto.streamlit.app/";
+        window.location.href = "https://autofeedback.streamlit.app/";
     }, []);
 
     return (
