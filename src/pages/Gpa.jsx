@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Modal from '../components/Modal';
 import RefreshIcon from '../components/RefreshIcon';
+import FeaturePoster from '../components/FeaturePoster';
 import { useNavigate } from 'react-router-dom';
 import { signInAgain } from '../utils/session';
 import { friendlyError } from '../utils/friendlyError';
@@ -128,28 +129,7 @@ function Gpa() {
         recalculate(gpaData, newExcluded);
     };
 
-    if (isLoading && !hasData) return (
-        <div className="gpa-page-wrapper">
-            <div className="gpa-card" style={{ padding: '2rem' }}>
-                <div className="gpa-header-section">
-                    <div className="skeleton skeleton-title" style={{ width: '250px' }}></div>
-                    <div className="skeleton skeleton-text" style={{ width: '400px', maxWidth: '100%' }}></div>
-                    <div className="skeleton skeleton-text" style={{ width: '300px', maxWidth: '80%', marginTop: '4px' }}></div>
-                </div>
-                <div className="summary-cards-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '3rem', marginTop: '2rem' }}>
-                    <div className="skeleton skeleton-card" style={{ height: '120px', borderRadius: '16px' }}></div>
-                    <div className="skeleton skeleton-card" style={{ height: '120px', borderRadius: '16px' }}></div>
-                    <div className="skeleton skeleton-card" style={{ height: '120px', borderRadius: '16px' }}></div>
-                </div>
-                <div className="table-section-glass" style={{ border: 'none', background: 'transparent' }}>
-                    <div className="skeleton skeleton-table-row" style={{ height: '40px', borderRadius: '8px', marginBottom: '12px' }}></div>
-                    {[...Array(5)].map((_, i) => (
-                        <div key={i} className="skeleton skeleton-table-row" style={{ height: '50px', borderRadius: '8px', marginBottom: '8px' }}></div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
+    if (isLoading && !hasData) return <FeaturePoster label="Loading your GPA" />;
     if (error && !hasData) return <div className="error-message">{friendlyError(error)}</div>;
     if (!gpaData) return <p>No GPA data found.</p>;
 

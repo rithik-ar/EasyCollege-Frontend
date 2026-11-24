@@ -1,0 +1,274 @@
+/* Scheduled Feedback poster, shown while pages load (FeaturePoster.jsx).
+   A card centred in the space under the navbar, sized so the whole poster fits on one screen. */
+.fp-page {
+    --fp-yellow: #f9c846;
+    --fp-ink: #0b0b0b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: calc(100vh - 6rem);
+    min-height: calc(100dvh - 6rem);
+    padding: 1.5rem 1rem;
+}
+
+.fp {
+    width: 100%;
+    max-width: 980px;
+    background: var(--fp-ink);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 22px;
+    padding: clamp(1.5rem, 3.5vw, 2.75rem);
+    color: #fff;
+    text-align: left;
+}
+
+.fp p,
+.fp h2,
+.fp h3 {
+    margin: 0;
+}
+
+.fp-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem 1.25rem;
+}
+
+.fp-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.17em;
+    text-transform: uppercase;
+    color: #d4d4d4;
+}
+
+.fp .fp-eyebrow-accent {
+    color: var(--fp-yellow);
+    margin-top: 2.25rem;
+}
+
+.fp-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--fp-yellow);
+    flex-shrink: 0;
+}
+
+.fp-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.8rem;
+    color: #a3a3a3;
+}
+
+.fp-spinner {
+    animation: spin 1s linear infinite;
+}
+
+.fp-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 2.5rem;
+    align-items: center;
+    margin-top: 1.75rem;
+}
+
+.fp-title {
+    font-size: clamp(1.85rem, 4.2vw, 3.3rem);
+    font-weight: 700;
+    line-height: 1.06;
+    letter-spacing: -0.022em;
+    color: #fff;
+}
+
+.fp-accent {
+    color: var(--fp-yellow);
+}
+
+.fp .fp-lede {
+    margin-top: 1.1rem;
+    font-size: clamp(0.95rem, 1.3vw, 1.1rem);
+    line-height: 1.55;
+    color: #cfcfcf;
+}
+
+/* The portal's form, drawn in its own light style */
+.fp-mock {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.6rem 1.8rem;
+    color: #31333f;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.fp-mock-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.fp-mock-link {
+    display: inline-block;
+    margin: 0.85rem 0 1.1rem -0.35rem;
+    padding: 0.15rem 0.35rem;
+    border: 2px solid var(--fp-yellow);
+    border-radius: 7px;
+    color: #1a55a8;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    font-size: 1rem;
+}
+
+.fp-mock-label {
+    font-size: 0.82rem;
+}
+
+.fp-mock-input {
+    margin: 0.5rem 0 0.9rem;
+    padding: 0.65rem 0.9rem;
+    border-radius: 7px;
+    background: #f0f2f6;
+    font-size: 0.92rem;
+}
+
+.fp-mock-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.95rem;
+    border: 1px solid #d5d7de;
+    border-radius: 7px;
+    font-size: 0.92rem;
+}
+
+.fp .fp-note {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--fp-yellow);
+}
+
+.fp-steps {
+    list-style: none;
+    margin: 1rem 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+
+.fp-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+}
+
+.fp-step-num {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--fp-yellow);
+    color: var(--fp-ink);
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.fp-step h3 {
+    font-size: 1.08rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.28;
+}
+
+.fp-step p {
+    margin-top: 0.3rem;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    color: #a3a3a3;
+}
+
+.fp-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.9rem;
+    margin-top: 2.25rem;
+    padding-top: 1.4rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.fp-tagline {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.fp-live {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--fp-yellow);
+}
+
+@media (max-width: 860px) {
+    .fp-hero {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .fp-steps {
+        grid-template-columns: 1fr;
+        gap: 0.9rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .fp-page {
+        min-height: 0;
+        padding: 1rem 0.75rem;
+    }
+
+    .fp .fp-eyebrow-accent {
+        margin-top: 1.75rem;
+    }
+
+    .fp-mock {
+        padding: 1.25rem 1.4rem;
+    }
+
+    .fp-mock-title {
+        font-size: 1.25rem;
+    }
+
+    .fp-mock-link {
+        font-size: 0.88rem;
+    }
+
+    .fp-tagline,
+    .fp-live {
+        font-size: 1.05rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fp-spinner {
+        animation: none;
+    }
+}

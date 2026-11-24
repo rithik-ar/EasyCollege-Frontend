@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { User, Lock, Eye, EyeOff, GraduationCap, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
+import FeaturePoster from '../components/FeaturePoster';
 
 function Login() {
     const [rollNumber, setRollNumber] = useState('');
@@ -58,15 +59,7 @@ function Login() {
     };
 
     if (isLoading) {
-        return (
-            <div className="dashboard-container">
-                <div className="dashboard-options" style={{ width: '100%', maxWidth: '1200px' }}>
-                    {[...Array(5)].map((_, i) => (
-                        <div key={i} className="skeleton skeleton-card" style={{ height: '220px', borderRadius: '20px' }}></div>
-                    ))}
-                </div>
-            </div>
-        );
+        return <FeaturePoster label="Signing you in to eCampus" />;
     }
 
     return (

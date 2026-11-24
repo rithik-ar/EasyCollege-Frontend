@@ -4,6 +4,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 import Modal from '../components/Modal';
 import { Info } from 'lucide-react';
 import RefreshIcon from '../components/RefreshIcon';
+import FeaturePoster from '../components/FeaturePoster';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { signInAgain } from '../utils/session';
@@ -151,37 +152,7 @@ function Cgpa() {
         recalculate(cgpaData, newExcluded);
     };
 
-    if (isLoading && !hasData) return (
-        <div className="cgpa-page-wrapper">
-            <div className="cgpa-card" style={{ padding: '2rem' }}>
-                <div className="cgpa-summary" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
-                    <div className="skeleton skeleton-title" style={{ width: '200px', margin: '0' }}></div>
-                    <div className="skeleton skeleton-title" style={{ width: '250px', margin: '0' }}></div>
-                    <div className="skeleton skeleton-title" style={{ width: '220px', margin: '0' }}></div>
-                </div>
-                <div className="cgpa-content-grid" style={{ marginTop: '2rem' }}>
-                    <div className="table-section">
-                        <div className="skeleton skeleton-title" style={{ width: '180px' }}></div>
-                        <div className="skeleton skeleton-table-row" style={{ height: '40px', borderRadius: '8px', marginBottom: '8px' }}></div>
-                        {[...Array(6)].map((_, i) => (
-                            <div key={i} className="skeleton skeleton-table-row" style={{ height: '40px', borderRadius: '8px', marginBottom: '8px' }}></div>
-                        ))}
-                    </div>
-                    <div className="subjects-section">
-                        <div className="skeleton skeleton-title" style={{ width: '250px' }}></div>
-                        <div className="skeleton skeleton-table-row" style={{ height: '40px', borderRadius: '8px', marginBottom: '8px' }}></div>
-                        {[...Array(8)].map((_, i) => (
-                            <div key={i} className="skeleton skeleton-table-row" style={{ height: '45px', borderRadius: '8px', marginBottom: '8px' }}></div>
-                        ))}
-                    </div>
-                </div>
-                <div className="chart-section" style={{ marginTop: '2rem' }}>
-                    <div className="skeleton skeleton-title" style={{ width: '300px' }}></div>
-                    <div className="skeleton skeleton-card" style={{ height: '300px', borderRadius: '16px' }}></div>
-                </div>
-            </div>
-        </div>
-    );
+    if (isLoading && !hasData) return <FeaturePoster label="Loading your CGPA" />;
     if (error && !hasData) return <div className="error-message">{friendlyError(error)}</div>;
     if (!cgpaData || !displayData) {
         return <p>No CGPA data available to display.</p>;

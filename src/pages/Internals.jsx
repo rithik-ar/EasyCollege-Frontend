@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, AlertCircle, CheckCircle2, Wand2, ArrowLeft, Save, TrendingUp } from 'lucide-react';
 import RefreshIcon from '../components/RefreshIcon';
+import FeaturePoster from '../components/FeaturePoster';
 import { SIMULATOR_TABLE_IDS, analyzeComponents, calculateTotal, calculateNeededForNext } from '../utils/internalsSimulation';
 import { useNavigate } from 'react-router-dom';
 import { signInAgain } from '../utils/session';
@@ -90,19 +91,7 @@ function Internals() {
         return 'low';
     };
 
-    if (isLoading && !hasData) return (
-        <div className="internals-container" style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
-            <div className="skeleton skeleton-text" style={{ width: '120px', marginBottom: '2rem' }}></div>
-            <div className="marks-table-container">
-                <div className="table-wrapper">
-                    <div className="skeleton skeleton-table-row" style={{ height: '40px', borderRadius: '8px', marginBottom: '16px' }}></div>
-                    {[...Array(6)].map((_, i) => (
-                        <div key={i} className="skeleton skeleton-table-row" style={{ height: '80px', borderRadius: '12px', marginBottom: '12px' }}></div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
+    if (isLoading && !hasData) return <FeaturePoster label="Loading your internal marks" />;
 
     return (
         <div className="internals-container">
