@@ -73,6 +73,36 @@
     animation: spin 1s linear infinite;
 }
 
+.fp-continue {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.95rem;
+    border: none;
+    border-radius: 999px;
+    background: var(--fp-yellow);
+    color: var(--fp-ink);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    animation: fp-pop 0.25s ease-out;
+}
+
+.fp-continue:hover {
+    filter: brightness(1.08);
+}
+
+.fp-continue:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+@keyframes fp-pop {
+    from { opacity: 0; transform: scale(0.92); }
+    to { opacity: 1; transform: scale(1); }
+}
+
 .fp-hero {
     display: grid;
     grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
@@ -268,7 +298,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .fp-spinner {
+    .fp-spinner,
+    .fp-continue {
         animation: none;
     }
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Info, Plus, Minus, Wand2, Save, CloudOff, RotateCcw } from 'lucide-react';
 import RefreshIcon from '../components/RefreshIcon';
 import FeaturePoster from '../components/FeaturePoster';
+import usePosterHold from '../hooks/usePosterHold';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { simulateCourse, updateSimulation, resetSimulation, canSimulate, formatBunks, formatPercent } from '../utils/attendanceSimulation';
 import { useNavigate } from 'react-router-dom';
@@ -142,7 +143,9 @@ function Attendance() {
         </div>
     );
 
-    if (isLoading && !hasData) return <FeaturePoster label="Loading your attendance" />;
+    // Called before any early return (hooks must be): holds the poster long enough to read
+    const poster = usePosterHold(isLoading && !hasData, Boolean(error) || isPaused);
+    if (poster.show) return <FeaturePoster label="Loading your attendance" ready={poster.ready} onContinue={poster.skip} />;
 
     if (isPaused) {
         return (

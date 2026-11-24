@@ -5,6 +5,7 @@ import Modal from '../components/Modal';
 import { Info } from 'lucide-react';
 import RefreshIcon from '../components/RefreshIcon';
 import FeaturePoster from '../components/FeaturePoster';
+import usePosterHold from '../hooks/usePosterHold';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { signInAgain } from '../utils/session';
@@ -152,7 +153,9 @@ function Cgpa() {
         recalculate(cgpaData, newExcluded);
     };
 
-    if (isLoading && !hasData) return <FeaturePoster label="Loading your CGPA" />;
+    // Called before any early return (hooks must be): holds the poster long enough to read
+    const poster = usePosterHold(isLoading && !hasData, Boolean(error));
+    if (poster.show) return <FeaturePoster label="Loading your CGPA" ready={poster.ready} onContinue={poster.skip} />;
     if (error && !hasData) return <div className="error-message">{friendlyError(error)}</div>;
     if (!cgpaData || !displayData) {
         return <p>No CGPA data available to display.</p>;

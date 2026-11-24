@@ -1,12 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUp, CalendarDays, Loader2 } from 'lucide-react';
+import { ArrowRight, ArrowUp, CalendarDays, Loader2 } from 'lucide-react';
 import './FeaturePoster.css';
 
 const MotionSection = motion.section;
 
 // Announces Scheduled Feedback (the feedback portal) while a page loads, in place of its skeleton.
-// Shown only on first loads: refreshes keep the page's data on screen instead. To retire the
+// Shown only on first loads: refreshes keep the page's data on screen instead. It stays up for at
+// least POSTER_MIN_MS (utils/posterHold.js) so people can read it. To retire the
 // announcement, swap this component back out for the skeletons in the pages that render it.
 const STEPS = [
     { title: 'Open the Academic Calendar', text: 'Click the link above Schedule Feedback.' },
@@ -14,7 +15,8 @@ const STEPS = [
     { title: 'Schedule your feedback', text: 'Pick the date — it submits automatically.' }
 ];
 
-function FeaturePoster({ label = 'Loading' }) {
+// ready/onContinue come from usePosterHold: once the data is in, Continue skips the rest of the hold.
+function FeaturePoster({ label = 'Loading', ready = false, onContinue }) {
     return (
         <div className="fp-page">
             <MotionSection
@@ -26,10 +28,16 @@ function FeaturePoster({ label = 'Loading' }) {
             >
                 <div className="fp-top">
                     <p className="fp-eyebrow"><span className="fp-dot" aria-hidden="true" />New in the Feedback Portal</p>
-                    <p className="fp-status" role="status" aria-live="polite">
-                        <Loader2 size={13} className="fp-spinner" aria-hidden="true" />
-                        {label}&hellip;
-                    </p>
+                    {ready ? (
+                        <button type="button" className="fp-continue" onClick={onContinue}>
+                            Continue <ArrowRight size={14} aria-hidden="true" />
+                        </button>
+                    ) : (
+                        <p className="fp-status" role="status" aria-live="polite">
+                            <Loader2 size={13} className="fp-spinner" aria-hidden="true" />
+                            {label}&hellip;
+                        </p>
+                    )}
                 </div>
 
                 <div className="fp-hero">

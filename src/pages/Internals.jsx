@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, AlertCircle, CheckCircle2, Wand2, ArrowLeft, Save, TrendingUp } from 'lucide-react';
 import RefreshIcon from '../components/RefreshIcon';
 import FeaturePoster from '../components/FeaturePoster';
+import usePosterHold from '../hooks/usePosterHold';
 import { SIMULATOR_TABLE_IDS, analyzeComponents, calculateTotal, calculateNeededForNext } from '../utils/internalsSimulation';
 import { useNavigate } from 'react-router-dom';
 import { signInAgain } from '../utils/session';
@@ -91,7 +92,9 @@ function Internals() {
         return 'low';
     };
 
-    if (isLoading && !hasData) return <FeaturePoster label="Loading your internal marks" />;
+    // Called before any early return (hooks must be): holds the poster long enough to read
+    const poster = usePosterHold(isLoading && !hasData, Boolean(error));
+    if (poster.show) return <FeaturePoster label="Loading your internal marks" ready={poster.ready} onContinue={poster.skip} />;
 
     return (
         <div className="internals-container">

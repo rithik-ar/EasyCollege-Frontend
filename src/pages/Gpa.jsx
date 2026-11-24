@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Modal from '../components/Modal';
 import RefreshIcon from '../components/RefreshIcon';
 import FeaturePoster from '../components/FeaturePoster';
+import usePosterHold from '../hooks/usePosterHold';
 import { useNavigate } from 'react-router-dom';
 import { signInAgain } from '../utils/session';
 import { friendlyError } from '../utils/friendlyError';
@@ -129,7 +130,9 @@ function Gpa() {
         recalculate(gpaData, newExcluded);
     };
 
-    if (isLoading && !hasData) return <FeaturePoster label="Loading your GPA" />;
+    // Called before any early return (hooks must be): holds the poster long enough to read
+    const poster = usePosterHold(isLoading && !hasData, Boolean(error));
+    if (poster.show) return <FeaturePoster label="Loading your GPA" ready={poster.ready} onContinue={poster.skip} />;
     if (error && !hasData) return <div className="error-message">{friendlyError(error)}</div>;
     if (!gpaData) return <p>No GPA data found.</p>;
 

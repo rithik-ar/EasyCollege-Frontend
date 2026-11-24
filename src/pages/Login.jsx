@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { User, Lock, Eye, EyeOff, GraduationCap, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import FeaturePoster from '../components/FeaturePoster';
+import usePosterHold from '../hooks/usePosterHold';
 
 function Login() {
     const [rollNumber, setRollNumber] = useState('');
@@ -11,8 +12,15 @@ function Login() {
     const [loginType, setLoginType] = useState('S'); // 'S' for Student, 'P' for Parent
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [signedIn, setSignedIn] = useState(false); // waits for the poster's hold before the dashboard
     const navigate = useNavigate();
     const location = useLocation();
+    // A failed sign-in drops the poster at once so the error shows without waiting
+    const poster = usePosterHold(isLoading, Boolean(error));
+
+    useEffect(() => {
+        if (signedIn && !poster.show) navigate('/dashboard');
+    }, [signedIn, poster.show, navigate]);
 
     useEffect(() => {
         if (location.state?.error) {
@@ -46,7 +54,7 @@ function Login() {
             if (response.ok && data.success) {
                 localStorage.setItem('user', JSON.stringify(data.user));
                 localStorage.setItem('auth_token', data.auth_token);
-                navigate('/dashboard');
+                setSignedIn(true);
             } else {
                 setError(data.error || 'Login failed!');
             }
@@ -58,8 +66,8 @@ function Login() {
         }
     };
 
-    if (isLoading) {
-        return <FeaturePoster label="Signing you in to eCampus" />;
+    if (poster.show || signedIn) {
+        return <FeaturePoster label="Signing you in to eCampus" ready={poster.ready} onContinue={poster.skip} />;
     }
 
     return (
